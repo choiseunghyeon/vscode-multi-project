@@ -2,6 +2,11 @@
   "name": "multi-project",
   "displayName": "Multi Project",
   "description": "Multi Project",
+  "publisher": "choiseunghyeon",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/choiseunghyeon/vscode-multi-project"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.62.0"
@@ -37,14 +42,21 @@
       {
         "command": "multiProjectExplorer.refreshEntry",
         "title": "Refresh",
-        "icon": {
-          "light": "resources/light/refresh.svg",
-          "dark": "resources/dark/refresh.svg"
-        }
+        "icon": "$(debug-restart)"
       },
       {
         "command": "multiProjectExplorer.openFile",
         "title": "Open File"
+      },
+      {
+        "command": "multiProjectExplorer.openFolder",
+        "title": "Open Folder",
+        "icon": "$(sign-out)"
+      },
+      {
+        "command": "multiProjectExplorer.addProjectPath",
+        "title": "Add Project Path",
+        "icon": "$(settings-add)"
       }
     ],
     "menus": {
@@ -53,9 +65,20 @@
           "command": "multiProjectExplorer.refreshEntry",
           "when": "view == multiProjectExplorer",
           "group": "navigation"
+        },
+        {
+          "command": "multiProjectExplorer.addProjectPath",
+          "when": "view == multiProjectExplorer",
+          "group": "navigation"
         }
       ],
-      "view/item/context": []
+      "view/item/context": [
+        {
+          "command": "multiProjectExplorer.openFolder",
+          "when": "view == multiProjectExplorer && viewItem == project",
+          "group": "inline"
+        }
+      ]
     },
     "configuration": [
       {
@@ -66,8 +89,11 @@
             "default": "*",
             "description": "파일의 일부 이름을 포함한 파일을 찾습니다. (*는 모든 파일을 포함합니다.)"
           },
-          "multiProject.paths": {
+          "multiProject.projectPaths": {
             "type": "array",
+            "items": {
+              "type": "string"
+            },
             "default": [
               "c:\\Users\\ket87\\OneDrive\\바탕 화면\\TIL",
               "c:\\Users\\ket87\\OneDrive\\바탕 화면\\JS_Design_Pattern"

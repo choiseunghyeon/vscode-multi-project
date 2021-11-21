@@ -150,13 +150,13 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
 
   private _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]>;
   private fileName: string;
-  private multiPaths: string[] | undefined;
+  private projectPaths: string[] | undefined;
 
   constructor() {
     this._onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
 
     this.fileName = vscode.workspace.getConfiguration("multiProject").get("fileName") || "*";
-    this.multiPaths = vscode.workspace.getConfiguration("multiProject").get("paths");
+    this.projectPaths = vscode.workspace.getConfiguration("multiProject").get("projectPaths");
   }
 
   get onDidChangeFile(): vscode.Event<vscode.FileChangeEvent[]> {
@@ -277,8 +277,8 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
 
     // 첫 로드
 
-    if (this.multiPaths) {
-      return this.multiPaths.map(path => new ProjectItem(vscode.Uri.file(path), vscode.FileType.Unknown));
+    if (this.projectPaths) {
+      return this.projectPaths.map(path => new ProjectItem(vscode.Uri.file(path), vscode.FileType.Unknown));
     }
     // const testFolderUri = vscode.Uri.file(this.multiPaths);
     // if (testFolderUri) {
@@ -325,6 +325,15 @@ export class MultiProjectExplorer {
     context.subscriptions.push(vscode.window.createTreeView("multiProjectExplorer", { treeDataProvider }));
     vscode.commands.registerCommand("multiProjectExplorer.openFile", resource => this.openResource(resource));
     vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => treeDataProvider.refresh());
+    vscode.commands.registerCommand("multiProjectExplorer.openFolder", async args => {
+      const uri = args.resourceUri;
+      const openInNewWindow = true;
+      await vscode.commands.executeCommand("vscode.openFolder", uri, openInNewWindow);
+    });
+    vscode.commands.registerCommand("multiProjectExplorer.addProjectPath", async args => {
+      console.log("called addProjectPath");
+      // vscode.commands.executeCommand("workbench.action.openWorkspace");
+    });
   }
 
   private openResource(resource: vscode.Uri): void {
