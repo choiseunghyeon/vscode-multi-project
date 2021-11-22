@@ -15,7 +15,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:multiProjectExplorer"
+    "onView:multiProjectExplorer",
+    "onCommand:multiProjectExplorer.addProject"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -60,7 +61,7 @@
       },
       {
         "command": "multiProjectExplorer.addProject",
-        "title": "Add Project Path",
+        "title": "Add Project",
         "icon": "$(settings-add)"
       }
     ],

@@ -9,3 +9,5 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Initial release
 
 - Added Open in New Window && Project Icon
+
+- Added ignored Folders
