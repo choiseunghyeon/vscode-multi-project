@@ -151,12 +151,14 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
   private _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]>;
   private fileName: string;
   private projectPaths: string[] | undefined;
+  ignoredFolders: string[] | undefined;
 
   constructor() {
     this._onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
 
     this.fileName = vscode.workspace.getConfiguration("multiProject").get("fileName") || "*";
     this.projectPaths = vscode.workspace.getConfiguration("multiProject").get("projectPaths");
+    this.ignoredFolders = vscode.workspace.getConfiguration("multiProject").get("ignoredFolders");
   }
 
   get onDidChangeFile(): vscode.Event<vscode.FileChangeEvent[]> {
@@ -309,13 +311,19 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
   }
 
   private validateFile(name: string, type: vscode.FileType): boolean {
-    if (type === vscode.FileType.Directory) return true;
+    // 폴더 검증
+    if (type === vscode.FileType.Directory) {
+      // undefined면 보여주기 / 하나도 일치하지 않으면 보여주기
+      if (this.ignoredFolders === undefined || this.ignoredFolders.length <= 0) return true;
+      else if (this.ignoredFolders.some(ignoreFolderName => ignoreFolderName === name)) return false;
+      return true;
+    } else {
+      // 파일 검증
+      if (this.fileName === "*") return true;
+      else if (name.includes(this.fileName)) return true;
 
-    if (this.fileName === "*") return true;
-
-    if (name.includes(this.fileName)) return true;
-
-    return false;
+      return true;
+    }
   }
 }
 
