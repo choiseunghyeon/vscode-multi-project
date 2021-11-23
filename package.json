@@ -64,6 +64,16 @@
         "command": "multiProjectExplorer.removeProject",
         "title": "Remove Project",
         "icon": "$(settings-add)"
+      },
+      {
+        "command": "multiProjectExplorer.openTerminal",
+        "title": "Open Terminal",
+        "icon": "$(settings-add)"
+      },
+      {
+        "command": "multiProjectExplorer.selectProject",
+        "title": "Select Project",
+        "icon": "$(settings-add)"
       }
     ],
     "menus": {
@@ -84,6 +94,10 @@
           "command": "multiProjectExplorer.openFolder",
           "when": "view == multiProjectExplorer && viewItem == project",
           "group": "inline"
+        },
+        {
+          "command": "multiProjectExplorer.openTerminal",
+          "when": "view == multiProjectExplorer && viewItem == project"
         },
         {
           "command": "multiProjectExplorer.removeProject",

@@ -3,7 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as mkdirp from "mkdirp";
 import * as rimraf from "rimraf";
-import { getfilePath } from "./utils";
+import { getFilePath } from "./utils";
 
 //#region Utilities
 
@@ -320,10 +320,12 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
 }
 
 export class ProjectItem extends vscode.TreeItem {
+  projectLabel: string | undefined;
   constructor(public readonly resourceUri: vscode.Uri, public readonly type: vscode.FileType) {
     super(resourceUri, type === vscode.FileType.File ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
 
     if (this.type === vscode.FileType.Unknown) {
+      this.projectLabel = path.parse(resourceUri.fsPath).name;
       this.iconPath = new vscode.ThemeIcon("root-folder");
     }
 
@@ -375,7 +377,7 @@ export class MultiProjectExplorer {
     context.subscriptions.push(
       vscode.commands.registerCommand("multiProjectExplorer.addProject", args => {
         console.log(args);
-        const filePath = getfilePath(args);
+        const filePath = getFilePath(args);
         const resultPaths = treeDataProvider.projectPaths.concat(filePath);
         vscode.workspace.getConfiguration("multiProject").update("projectPaths", resultPaths, vscode.ConfigurationTarget.Global);
       })
@@ -384,7 +386,7 @@ export class MultiProjectExplorer {
     context.subscriptions.push(
       vscode.commands.registerCommand("multiProjectExplorer.removeProject", args => {
         console.log(args);
-        const filePath = getfilePath(args);
+        const filePath = getFilePath(args);
         const reulstPaths = treeDataProvider.projectPaths.filter(projectPath => projectPath !== filePath);
         vscode.workspace.getConfiguration("multiProject").update("projectPaths", reulstPaths, vscode.ConfigurationTarget.Global);
       })
@@ -403,9 +405,56 @@ export class MultiProjectExplorer {
         }
       })
     );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand("multiProjectExplorer.openTerminal", args => {
+        const filePath = getFilePath(args);
+        const terminal = this.getProjectTerminal(filePath);
+        terminal.show();
+        // 한글 지원 안됌 한글의 경우 ''로 감싸면 가능
+        terminal.sendText(`cd ${filePath}`);
+      })
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand("multiProjectExplorer.selectProject", async () => {
+        const selectedQuickPickItem = await this.selectProject(treeDataProvider);
+
+        if (!selectedQuickPickItem) return;
+
+        const openInNewWindow = true;
+        await vscode.commands.executeCommand("vscode.openFolder", selectedQuickPickItem.project.resourceUri, openInNewWindow);
+      })
+    );
   }
 
   private openResource(resource: vscode.Uri): void {
     vscode.window.showTextDocument(resource);
+  }
+
+  private getProjectTerminal(filePath: string) {
+    const { name } = path.parse(filePath);
+
+    const terminal = vscode.window.terminals.find(terminal => terminal.name === name);
+    if (terminal) {
+      return terminal;
+    } else {
+      return vscode.window.createTerminal(`${name}`);
+    }
+  }
+
+  private async selectProject(treeDataProvider: MultiProjectProvider) {
+    interface ProjectQuickPickItem extends vscode.QuickPickItem {
+      project: ProjectItem;
+    }
+
+    const projectItems = await treeDataProvider.getChildren();
+    const items: ProjectQuickPickItem[] = projectItems.map(project => ({
+      label: project?.projectLabel || "프로젝트 라벨이 없습니다.",
+      project,
+    }));
+
+    const selectedQuickPickItem = await vscode.window.showQuickPick(items);
+    return selectedQuickPickItem;
   }
 }
