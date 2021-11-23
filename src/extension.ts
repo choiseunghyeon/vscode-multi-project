@@ -9,6 +9,11 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("multiProjectExplorer.addProject", args => {
       console.log(args);
+      const multiProjet = vscode.workspace.getConfiguration("multiProject");
+      const resultPaths = [multiProjet.get("projectPaths"), args.fsPath];
+      multiProjet.update("projectPaths", resultPaths, vscode.ConfigurationTarget.Global).then(aa => {
+        console.log(aa);
+      });
     })
   );
   new MultiProjectExplorer(context);

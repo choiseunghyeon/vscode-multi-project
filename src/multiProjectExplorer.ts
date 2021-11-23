@@ -149,16 +149,21 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
   readonly onDidChangeTreeData: vscode.Event<ProjectItem | undefined | void> = this._onDidChangeTreeData.event;
 
   private _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]>;
-  private fileName: string;
-  private projectPaths: string[] | undefined;
-  ignoredFolders: string[] | undefined;
 
   constructor() {
     this._onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
+  }
 
-    this.fileName = vscode.workspace.getConfiguration("multiProject").get("fileName") || "*";
-    this.projectPaths = vscode.workspace.getConfiguration("multiProject").get("projectPaths");
-    this.ignoredFolders = vscode.workspace.getConfiguration("multiProject").get("ignoredFolders");
+  get fileName(): string {
+    return vscode.workspace.getConfiguration("multiProject").get("fileName") || "*";
+  }
+
+  get projectPaths(): string[] | undefined {
+    return vscode.workspace.getConfiguration("multiProject").get("projectPaths");
+  }
+
+  get ignoredFolders(): string[] | undefined {
+    return vscode.workspace.getConfiguration("multiProject").get("ignoredFolders");
   }
 
   get onDidChangeFile(): vscode.Event<vscode.FileChangeEvent[]> {
@@ -327,30 +332,6 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
   }
 }
 
-export class MultiProjectExplorer {
-  constructor(context: vscode.ExtensionContext) {
-    const treeDataProvider = new MultiProjectProvider();
-    context.subscriptions.push(vscode.window.createTreeView("multiProjectExplorer", { treeDataProvider }));
-    vscode.commands.registerCommand("multiProjectExplorer.openFile", resource => this.openResource(resource));
-    vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => treeDataProvider.refresh());
-    vscode.commands.registerCommand("multiProjectExplorer.openFolder", async args => {
-      const uri = args.resourceUri;
-      const openInNewWindow = true;
-      await vscode.commands.executeCommand("vscode.openFolder", uri, openInNewWindow);
-    });
-    vscode.commands.registerCommand("multiProjectExplorer.addProjectPath", async args => {
-      console.log("called addProjectPath");
-      // vscode.commands.executeCommand("workbench.action.openWorkspace");
-    });
-  }
-
-  private openResource(resource: vscode.Uri): void {
-    vscode.window.showTextDocument(resource);
-  }
-}
-
-const contextValueType = "rootProject" || "file" || "folder";
-
 export class ProjectItem extends vscode.TreeItem {
   constructor(public readonly resourceUri: vscode.Uri, public readonly type: vscode.FileType) {
     super(resourceUri, type === vscode.FileType.File ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
@@ -379,5 +360,39 @@ export class ProjectItem extends vscode.TreeItem {
         this.contextValue = "defult";
         break;
     }
+  }
+}
+
+export class MultiProjectExplorer {
+  constructor(context: vscode.ExtensionContext) {
+    const treeDataProvider = new MultiProjectProvider();
+    context.subscriptions.push(vscode.window.createTreeView("multiProjectExplorer", { treeDataProvider }));
+    vscode.commands.registerCommand("multiProjectExplorer.openFile", resource => this.openResource(resource));
+    vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => treeDataProvider.refresh());
+    vscode.commands.registerCommand("multiProjectExplorer.openFolder", async args => {
+      const uri = args.resourceUri;
+      const openInNewWindow = true;
+      await vscode.commands.executeCommand("vscode.openFolder", uri, openInNewWindow);
+    });
+
+    vscode.commands.registerCommand("multiProjectExplorer.addProjectPath", async args => {
+      console.log("called addProjectPath");
+      // vscode.commands.executeCommand("workbench.action.openWorkspace");
+      const multiProjet = vscode.workspace.getConfiguration("multiProject");
+      // const resultPaths = [multiProjet.get('projectPaths')]
+      multiProjet.update("projectPaths", args.fsPath, vscode.ConfigurationTarget.Global);
+    });
+
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeConfiguration(cfg => {
+        if (cfg.affectsConfiguration("multiProject.fileName") || cfg.affectsConfiguration("multiProject.projectPaths") || cfg.affectsConfiguration("multiProject.ignoredFolders")) {
+          treeDataProvider.refresh();
+        }
+      })
+    );
+  }
+
+  private openResource(resource: vscode.Uri): void {
+    vscode.window.showTextDocument(resource);
   }
 }
