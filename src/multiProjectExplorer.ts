@@ -3,6 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as mkdirp from "mkdirp";
 import * as rimraf from "rimraf";
+import { getfilePath } from "./utils";
 
 //#region Utilities
 
@@ -155,15 +156,15 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
   }
 
   get fileName(): string {
-    return vscode.workspace.getConfiguration("multiProject").get("fileName") || "*";
+    return vscode.workspace.getConfiguration("multiProject").get("fileName", "*");
   }
 
-  get projectPaths(): string[] | undefined {
-    return vscode.workspace.getConfiguration("multiProject").get("projectPaths");
+  get projectPaths(): string[] {
+    return vscode.workspace.getConfiguration("multiProject").get("projectPaths", []);
   }
 
-  get ignoredFolders(): string[] | undefined {
-    return vscode.workspace.getConfiguration("multiProject").get("ignoredFolders");
+  get ignoredFolders(): string[] {
+    return vscode.workspace.getConfiguration("multiProject").get("ignoredFolders", []);
   }
 
   get onDidChangeFile(): vscode.Event<vscode.FileChangeEvent[]> {
@@ -284,21 +285,9 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
 
     // 첫 로드
 
-    if (this.projectPaths) {
+    if (this.projectPaths.length > 0) {
       return this.projectPaths.map(path => new ProjectItem(vscode.Uri.file(path), vscode.FileType.Unknown));
     }
-    // const testFolderUri = vscode.Uri.file(this.multiPaths);
-    // if (testFolderUri) {
-    //   const children = await this.readDirectory(testFolderUri);
-    //   children.sort((a, b) => {
-    //     if (a[1] === b[1]) {
-    //       return a[0].localeCompare(b[0]);
-    //     }
-    //     return a[1] === vscode.FileType.Directory ? -1 : 1;
-    //   });
-    //   return this.filterChildren(children, testFolderUri.fsPath);
-    // }
-
     return [];
   }
 
@@ -318,9 +307,7 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
   private validateFile(name: string, type: vscode.FileType): boolean {
     // 폴더 검증
     if (type === vscode.FileType.Directory) {
-      // undefined면 보여주기 / 하나도 일치하지 않으면 보여주기
-      if (this.ignoredFolders === undefined || this.ignoredFolders.length <= 0) return true;
-      else if (this.ignoredFolders.some(ignoreFolderName => ignoreFolderName === name)) return false;
+      if (this.ignoredFolders.some(ignoreFolderName => ignoreFolderName === name)) return false;
       return true;
     } else {
       // 파일 검증
@@ -357,7 +344,7 @@ export class ProjectItem extends vscode.TreeItem {
         this.contextValue = "file";
         break;
       default:
-        this.contextValue = "defult";
+        this.contextValue = "default";
         break;
     }
   }
@@ -365,6 +352,16 @@ export class ProjectItem extends vscode.TreeItem {
 
 export class MultiProjectExplorer {
   constructor(context: vscode.ExtensionContext) {
+    /**
+     *         {
+          "command": "multiProjectExplorer.aliases",
+          "when": "view == multiProjectExplorer && viewItem == project"
+        },
+        {
+          "command": "multiProjectExplorer.bookmark",
+          "when": "view == multiProjectExplorer && viewItem == file"
+        }
+     */
     const treeDataProvider = new MultiProjectProvider();
     context.subscriptions.push(vscode.window.createTreeView("multiProjectExplorer", { treeDataProvider }));
     vscode.commands.registerCommand("multiProjectExplorer.openFile", resource => this.openResource(resource));
@@ -375,16 +372,32 @@ export class MultiProjectExplorer {
       await vscode.commands.executeCommand("vscode.openFolder", uri, openInNewWindow);
     });
 
-    vscode.commands.registerCommand("multiProjectExplorer.addProjectPath", async args => {
-      console.log("called addProjectPath");
-      // vscode.commands.executeCommand("workbench.action.openWorkspace");
-      const multiProjet = vscode.workspace.getConfiguration("multiProject");
-      // const resultPaths = [multiProjet.get('projectPaths')]
-      multiProjet.update("projectPaths", args.fsPath, vscode.ConfigurationTarget.Global);
-    });
+    context.subscriptions.push(
+      vscode.commands.registerCommand("multiProjectExplorer.addProject", args => {
+        console.log(args);
+        const filePath = getfilePath(args);
+        const resultPaths = treeDataProvider.projectPaths.concat(filePath);
+        vscode.workspace.getConfiguration("multiProject").update("projectPaths", resultPaths, vscode.ConfigurationTarget.Global);
+      })
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand("multiProjectExplorer.removeProject", args => {
+        console.log(args);
+        const filePath = getfilePath(args);
+        const reulstPaths = treeDataProvider.projectPaths.filter(projectPath => projectPath !== filePath);
+        vscode.workspace.getConfiguration("multiProject").update("projectPaths", reulstPaths, vscode.ConfigurationTarget.Global);
+      })
+    );
 
     context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration(cfg => {
+        if (cfg.affectsConfiguration("multiProject.projectPaths")) {
+          // filePath 모양 맞추기 c, d드라이브의 경우 대소문자로 들어올 수 있음
+          const resultPaths = treeDataProvider.projectPaths.map(projectPath => vscode.Uri.file(projectPath).fsPath);
+          vscode.workspace.getConfiguration("multiProject").update("projectPaths", resultPaths, vscode.ConfigurationTarget.Global);
+        }
+
         if (cfg.affectsConfiguration("multiProject.fileName") || cfg.affectsConfiguration("multiProject.projectPaths") || cfg.affectsConfiguration("multiProject.ignoredFolders")) {
           treeDataProvider.refresh();
         }

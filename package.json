@@ -16,7 +16,8 @@
   ],
   "activationEvents": [
     "onView:multiProjectExplorer",
-    "onCommand:multiProjectExplorer.addProject"
+    "onCommand:multiProjectExplorer.addProject",
+    "onCommand:multiProjectExplorer.removeProject"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -55,13 +56,13 @@
         "icon": "$(sign-out)"
       },
       {
-        "command": "multiProjectExplorer.addProjectPath",
-        "title": "Add Project Path",
+        "command": "multiProjectExplorer.addProject",
+        "title": "Add Project",
         "icon": "$(settings-add)"
       },
       {
-        "command": "multiProjectExplorer.addProject",
-        "title": "Add Project",
+        "command": "multiProjectExplorer.removeProject",
+        "title": "Remove Project",
         "icon": "$(settings-add)"
       }
     ],
@@ -76,11 +77,6 @@
           "command": "multiProjectExplorer.refreshEntry",
           "when": "view == multiProjectExplorer",
           "group": "navigation"
-        },
-        {
-          "command": "multiProjectExplorer.addProjectPath",
-          "when": "view == multiProjectExplorer",
-          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -88,6 +84,10 @@
           "command": "multiProjectExplorer.openFolder",
           "when": "view == multiProjectExplorer && viewItem == project",
           "group": "inline"
+        },
+        {
+          "command": "multiProjectExplorer.removeProject",
+          "when": "view == multiProjectExplorer && viewItem == project"
         }
       ]
     },
@@ -105,10 +105,7 @@
             "items": {
               "type": "string"
             },
-            "default": [
-              "c:\\Users\\ket87\\OneDrive\\바탕 화면\\TIL",
-              "c:\\Users\\ket87\\OneDrive\\바탕 화면\\JS_Design_Pattern"
-            ],
+            "default": [],
             "description": "표현 하고자 하는 프로젝트들의 경로를 설정합니다."
           },
           "multiProject.ignoredFolders": {
