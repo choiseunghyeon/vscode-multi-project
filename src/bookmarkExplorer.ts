@@ -145,9 +145,9 @@ export class FileStat implements vscode.FileStat {
 
 //#endregion
 
-export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem>, vscode.FileSystemProvider {
-  private _onDidChangeTreeData: vscode.EventEmitter<ProjectItem | undefined | void> = new vscode.EventEmitter<ProjectItem | undefined | void>();
-  readonly onDidChangeTreeData: vscode.Event<ProjectItem | undefined | void> = this._onDidChangeTreeData.event;
+export class BookmarkProvider implements vscode.TreeDataProvider<BookmarkItem>, vscode.FileSystemProvider {
+  private _onDidChangeTreeData: vscode.EventEmitter<BookmarkItem | undefined | void> = new vscode.EventEmitter<BookmarkItem | undefined | void>();
+  readonly onDidChangeTreeData: vscode.Event<BookmarkItem | undefined | void> = this._onDidChangeTreeData.event;
 
   private _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]>;
 
@@ -155,16 +155,8 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
     this._onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   }
 
-  get fileName(): string {
-    return vscode.workspace.getConfiguration("multiProject").get("fileName", "*");
-  }
-
-  get projectPaths(): string[] {
-    return vscode.workspace.getConfiguration("multiProject").get("projectPaths", []);
-  }
-
-  get ignoredFolders(): string[] {
-    return vscode.workspace.getConfiguration("multiProject").get("ignoredFolders", []);
+  get bookmarks(): string[] {
+    return vscode.workspace.getConfiguration("multiProject").get("bookmarks", []);
   }
 
   get onDidChangeFile(): vscode.Event<vscode.FileChangeEvent[]> {
@@ -277,7 +269,7 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
   }
 
   // tree data provider
-  async getChildren(element?: ProjectItem): Promise<ProjectItem[]> {
+  async getChildren(element?: BookmarkItem): Promise<BookmarkItem[]> {
     if (element) {
       const children = await this.readDirectory(element.resourceUri);
       return this.filterChildren(children, element.resourceUri.fsPath);
@@ -285,74 +277,39 @@ export class MultiProjectProvider implements vscode.TreeDataProvider<ProjectItem
 
     // 첫 로드
 
-    if (this.projectPaths.length > 0) {
-      return this.projectPaths.map(path => new ProjectItem(vscode.Uri.file(path), vscode.FileType.Unknown));
+    if (this.bookmarks.length > 0) {
+      return this.bookmarks.map(path => new BookmarkItem(vscode.Uri.file(path), vscode.FileType.File));
     }
+
     return [];
   }
 
-  getTreeItem(element: ProjectItem): ProjectItem {
+  getTreeItem(element: BookmarkItem): BookmarkItem {
     return element;
   }
 
   private filterChildren(children: [string, vscode.FileType][], filepath: string) {
-    return children.reduce((result: ProjectItem[], [name, type]) => {
-      if (this.validateFile(name, type)) {
-        result.push(new ProjectItem(vscode.Uri.file(path.join(filepath, name)), type));
-      }
+    return children.reduce((result: BookmarkItem[], [name, type]) => {
+      result.push(new BookmarkItem(vscode.Uri.file(path.join(filepath, name)), type));
       return result;
     }, []);
   }
-
-  private validateFile(name: string, type: vscode.FileType): boolean {
-    // 폴더 검증
-    if (type === vscode.FileType.Directory) {
-      if (this.ignoredFolders.some(ignoreFolderName => ignoreFolderName === name)) return false;
-      return true;
-    } else {
-      // 파일 검증
-      if (this.fileName === "*") return true;
-      else if (name.includes(this.fileName)) return true;
-
-      return true;
-    }
-  }
 }
 
-export class ProjectItem extends vscode.TreeItem {
+export class BookmarkItem extends vscode.TreeItem {
   projectLabel: string | undefined;
   constructor(public readonly resourceUri: vscode.Uri, public readonly type: vscode.FileType) {
-    super(resourceUri, type === vscode.FileType.File ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
+    super(resourceUri, vscode.TreeItemCollapsibleState.None);
 
-    if (this.type === vscode.FileType.Unknown) {
-      this.projectLabel = path.parse(resourceUri.fsPath).name;
-      this.iconPath = new vscode.ThemeIcon("root-folder");
-    }
+    this.projectLabel = path.parse(resourceUri.fsPath).name;
+    this.iconPath = new vscode.ThemeIcon("extensions-star-full");
 
-    this.setContextValue();
-
-    if (type === vscode.FileType.File) {
-      this.command = { command: "multiProjectExplorer.openFile", title: "Open File", arguments: [this.resourceUri] };
-      this.contextValue = "file";
-    }
-  }
-
-  setContextValue() {
-    switch (this.type) {
-      case vscode.FileType.Unknown:
-        this.contextValue = "project";
-        break;
-      case vscode.FileType.File:
-        this.contextValue = "file";
-        break;
-      default:
-        this.contextValue = "default";
-        break;
-    }
+    this.command = { command: "multiProjectExplorer.openFile", title: "Open File", arguments: [this.resourceUri] };
+    this.contextValue = "file";
   }
 }
 
-export class MultiProjectExplorer {
+export class BookmarkExplorer {
   constructor(context: vscode.ExtensionContext) {
     /**
      *         {
@@ -364,105 +321,45 @@ export class MultiProjectExplorer {
           "when": "view == multiProjectExplorer && viewItem == file"
         }
      */
-    const treeDataProvider = new MultiProjectProvider();
-    context.subscriptions.push(vscode.window.createTreeView("multiProjectExplorer", { treeDataProvider }));
-    vscode.commands.registerCommand("multiProjectExplorer.openFile", resource => this.openResource(resource));
-    vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => treeDataProvider.refresh());
-    vscode.commands.registerCommand("multiProjectExplorer.openFolder", async args => {
-      const uri = args.resourceUri;
-      const openInNewWindow = true;
-      await vscode.commands.executeCommand("vscode.openFolder", uri, openInNewWindow);
-    });
+    const treeDataProvider = new BookmarkProvider();
+    context.subscriptions.push(vscode.window.createTreeView("bookmarkExplorer", { treeDataProvider }));
+    vscode.commands.registerCommand("bookmarkExplorer.openFile", resource => this.openResource(resource));
+    // vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => treeDataProvider.refresh());
 
     context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.addProject", args => {
+      vscode.commands.registerCommand("bookmarkExplorer.addBookmark", args => {
         console.log(args);
         const filePath = getFilePath(args);
-        const resultPaths = treeDataProvider.projectPaths.concat(filePath);
-        vscode.workspace.getConfiguration("multiProject").update("projectPaths", resultPaths, vscode.ConfigurationTarget.Global);
+        const resultPaths = treeDataProvider.bookmarks.concat(filePath);
+        vscode.workspace.getConfiguration("multiProject").update("bookmarks", resultPaths, vscode.ConfigurationTarget.Global);
       })
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.removeProject", args => {
+      vscode.commands.registerCommand("bookmarkExplorer.removeBookmark", args => {
         console.log(args);
         const filePath = getFilePath(args);
-        const reulstPaths = treeDataProvider.projectPaths.filter(projectPath => projectPath !== filePath);
-        vscode.workspace.getConfiguration("multiProject").update("projectPaths", reulstPaths, vscode.ConfigurationTarget.Global);
+        const reulstPaths = treeDataProvider.bookmarks.filter(bookmark => bookmark !== filePath);
+        vscode.workspace.getConfiguration("multiProject").update("bookmarks", reulstPaths, vscode.ConfigurationTarget.Global);
       })
     );
 
     context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration(cfg => {
-        if (cfg.affectsConfiguration("multiProject.projectPaths")) {
+        if (cfg.affectsConfiguration("multiProject.bookmarks")) {
           // filePath 모양 맞추기 c, d드라이브의 경우 대소문자로 들어올 수 있음
-          const resultPaths = treeDataProvider.projectPaths.map(projectPath => vscode.Uri.file(projectPath).fsPath);
-          vscode.workspace.getConfiguration("multiProject").update("projectPaths", resultPaths, vscode.ConfigurationTarget.Global);
+          const resultPaths = treeDataProvider.bookmarks.map(bookmark => vscode.Uri.file(bookmark).fsPath);
+          vscode.workspace.getConfiguration("multiProject").update("bookmarks", resultPaths, vscode.ConfigurationTarget.Global);
         }
 
-        if (cfg.affectsConfiguration("multiProject.fileName") || cfg.affectsConfiguration("multiProject.projectPaths") || cfg.affectsConfiguration("multiProject.ignoredFolders")) {
+        if (cfg.affectsConfiguration("multiProject.bookmarks")) {
           treeDataProvider.refresh();
         }
       })
     );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.openTerminal", args => {
-        const filePath = getFilePath(args);
-        const terminal = this.getProjectTerminal(filePath);
-        terminal.show();
-        // 한글 지원 안됌 한글의 경우 ''로 감싸면 가능
-        terminal.sendText(`cd ${filePath}`);
-      })
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.selectProject", async () => {
-        const selectedQuickPickItem = await this.selectProject(treeDataProvider);
-
-        if (!selectedQuickPickItem) return;
-
-        const openInNewWindow = true;
-        await vscode.commands.executeCommand("vscode.openFolder", selectedQuickPickItem.project.resourceUri, openInNewWindow);
-      })
-    );
-
-    vscode.commands.registerCommand("multiProjectExplorer.addBookmark", args => {
-      const filePath = getFilePath(args);
-      const terminal = this.getProjectTerminal(filePath);
-      terminal.show();
-      // 한글 지원 안됌 한글의 경우 ''로 감싸면 가능
-      terminal.sendText(`cd ${filePath}`);
-    });
   }
 
   private openResource(resource: vscode.Uri): void {
     vscode.window.showTextDocument(resource);
-  }
-
-  private getProjectTerminal(filePath: string) {
-    const { name } = path.parse(filePath);
-
-    const terminal = vscode.window.terminals.find(terminal => terminal.name === name);
-    if (terminal) {
-      return terminal;
-    } else {
-      return vscode.window.createTerminal(`${name}`);
-    }
-  }
-
-  private async selectProject(treeDataProvider: MultiProjectProvider) {
-    interface ProjectQuickPickItem extends vscode.QuickPickItem {
-      project: ProjectItem;
-    }
-
-    const projectItems = await treeDataProvider.getChildren();
-    const items: ProjectQuickPickItem[] = projectItems.map(project => ({
-      label: project?.projectLabel || "프로젝트 라벨이 없습니다.",
-      project,
-    }));
-
-    const selectedQuickPickItem = await vscode.window.showQuickPick(items);
-    return selectedQuickPickItem;
   }
 }

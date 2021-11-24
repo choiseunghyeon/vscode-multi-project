@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/choiseunghyeon/vscode-multi-project"
   },
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.62.0"
   },
@@ -16,8 +16,11 @@
   ],
   "activationEvents": [
     "onView:multiProjectExplorer",
+    "onView:bookmarkExplorer",
     "onCommand:multiProjectExplorer.addProject",
-    "onCommand:multiProjectExplorer.removeProject"
+    "onCommand:multiProjectExplorer.removeProject",
+    "onCommand:bookmarkExplorer.addBookmark",
+    "onCommand:bookmarkExplorer.removeBookmark"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -37,6 +40,12 @@
           "name": "Multi Project Explorer",
           "icon": "media/dep.svg",
           "contextualTitle": "Multi Project Explorer"
+        },
+        {
+          "id": "bookmarkExplorer",
+          "name": "Bookmark Explorer",
+          "icon": "media/dep.svg",
+          "contextualTitle": "Bookmark Explorer"
         }
       ]
     },
@@ -48,6 +57,10 @@
       },
       {
         "command": "multiProjectExplorer.openFile",
+        "title": "Open File"
+      },
+      {
+        "command": "bookmarkExplorer.openFile",
         "title": "Open File"
       },
       {
@@ -74,12 +87,25 @@
         "command": "multiProjectExplorer.selectProject",
         "title": "Select Project",
         "icon": "$(settings-add)"
+      },
+      {
+        "command": "bookmarkExplorer.addBookmark",
+        "title": "Add Bookmark",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "bookmarkExplorer.removeBookmark",
+        "title": "Remove Bookmark",
+        "icon": "$(debug-restart)"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "command": "multiProjectExplorer.addProject"
+        },
+        {
+          "command": "bookmarkExplorer.addBookmark"
         }
       ],
       "view/title": [
@@ -102,6 +128,14 @@
         {
           "command": "multiProjectExplorer.removeProject",
           "when": "view == multiProjectExplorer && viewItem == project"
+        },
+        {
+          "command": "bookmarkExplorer.addBookmark",
+          "when": "view == multiProjectExplorer && viewItem == file"
+        },
+        {
+          "command": "bookmarkExplorer.removeBookmark",
+          "when": "view == bookmarkExplorer"
         }
       ]
     },
@@ -132,6 +166,14 @@
               "type": "string"
             },
             "description": "표시 하지 않을 폴더를 설정합니다."
+          },
+          "multiProject.bookmarks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "즐겨찾기 파일을 설정합니다."
           }
         }
       }
