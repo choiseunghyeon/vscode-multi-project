@@ -325,7 +325,7 @@ export class ProjectItem extends vscode.TreeItem {
     super(resourceUri, type === vscode.FileType.File ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
 
     if (this.type === vscode.FileType.Unknown) {
-      this.projectLabel = path.parse(resourceUri.fsPath).name;
+      this.projectLabel = resourceUri.fsPath.split(path.sep).pop();
       this.iconPath = new vscode.ThemeIcon("root-folder");
     }
 
@@ -417,7 +417,9 @@ export class MultiProjectExplorer {
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.selectProject", async () => {
+      vscode.commands.registerCommand("multiProjectExplorer.openProject", async () => {
+        console.log(123);
+
         const selectedQuickPickItem = await this.selectProject(treeDataProvider);
 
         if (!selectedQuickPickItem) return;
