@@ -13,3 +13,6 @@
 - 순서 변경
 - 프로젝트 이름 변경(aliases)
 - 코드 정리 및 quickpick keybinding
+- 선택된 프로젝트 대상 검색
+- 프로그레스바 표시
+- 필요한 기능이 이미 존재 - 추가적인 기능만 붙여서 사용하도록 변경하기 https://code.visualstudio.com/docs/editor/multi-root-workspaces

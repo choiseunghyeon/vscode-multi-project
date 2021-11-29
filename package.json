@@ -21,7 +21,8 @@
     "onCommand:multiProjectExplorer.openProject",
     "onCommand:multiProjectExplorer.removeProject",
     "onCommand:bookmarkExplorer.addBookmark",
-    "onCommand:bookmarkExplorer.removeBookmark"
+    "onCommand:bookmarkExplorer.removeBookmark",
+    "onCommand:multiProjectExplorer.openSearch"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -87,6 +88,12 @@
       {
         "command": "multiProjectExplorer.openProject",
         "title": "Open Project",
+        "category": "Multi Project",
+        "icon": "$(settings-add)"
+      },
+      {
+        "command": "multiProjectExplorer.openSearch",
+        "title": "Open Search",
         "category": "Multi Project",
         "icon": "$(settings-add)"
       },
