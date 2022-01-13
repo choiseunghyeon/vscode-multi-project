@@ -15,4 +15,10 @@
 - 코드 정리 및 quickpick keybinding
 - 선택된 프로젝트 대상 검색
 - 프로그레스바 표시
+- github 기능 추가
+- 원하는 task 등록하는 기능 (ex. 등록된 모든 project의 git fetch, 자동 rebase 또는 끌어오기 등)
+- Task Flow 개발 - 정해진 task들을 등록하여 task 자동화
+  - 등록된 프로젝트의 task list up해서 보여준 후 task flow에 등록하도록 제공할 예정
+    - 한계: 현재 workspace에 있는 task만 가져옴 vscode.tasks.fetchTasks()
+    - multi-root workspaces를 사용하면 workspaceFolders로 등록된 각 workspace에서 tasks 정보 가져올 수 있지만 검색 및 explorer 그리고 ctrl + shift + b(run build tasks)또한 통합되어 tasks들이 나옴 - 불편해짐
 - 필요한 기능이 이미 존재 - 추가적인 기능만 붙여서 사용하도록 변경하기 https://code.visualstudio.com/docs/editor/multi-root-workspaces
