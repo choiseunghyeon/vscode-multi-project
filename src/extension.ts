@@ -13,8 +13,7 @@ export function activate(context: vscode.ExtensionContext) {
   //     await vscode.commands.executeCommand("workbench.action.findInFiles");
   //   })
   // );
-  const projectPath = new ProjectPath(context);
-  const storage = new Storage(projectPath.storageFilePath);
+
   new MultiProjectExplorer(context);
   new BookmarkExplorer(context);
 }

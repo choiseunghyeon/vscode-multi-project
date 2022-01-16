@@ -123,7 +123,8 @@ namespace _ {
 
   export function mkdir(path: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      // mkdirp(path, error => handleResult(resolve, reject, error, void 0));
+      mkdirp(path);
+      resolve();
     });
   }
 

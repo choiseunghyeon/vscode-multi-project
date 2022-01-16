@@ -5,6 +5,7 @@ import { FileSystemProvider } from "./FileSystemProvider";
 import { IProject } from "./type";
 import { showInputBox } from "./quickPick";
 import { ProjectPath, Storage } from "./Storage";
+import { STORAGE_FILE } from "./constants";
 
 //#region Utilities
 
@@ -14,7 +15,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   private _onDidChangeTreeData: vscode.EventEmitter<ProjectItem | undefined | void> = new vscode.EventEmitter<ProjectItem | undefined | void>();
   readonly onDidChangeTreeData: vscode.Event<ProjectItem | undefined | void> = this._onDidChangeTreeData.event;
 
-  constructor(private context: vscode.ExtensionContext) {
+  constructor(private storage: Storage) {
     super();
   }
 
@@ -38,7 +39,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   }
 
   loadProjectsFile() {
-    // this.storage.load();
+    this.storage.load();
     // const errorLoading: string = this.storage.load();
     // // how to handle now, since the extension starts 'at load'?
     // if (errorLoading !== "") {
@@ -50,6 +51,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     //         if (typeof option === "undefined") {
     //             return;
     //         }
+
     //         if (option.title === "Open File") {
     //             vscode.commands.executeCommand("projectManager.editProjects");
     //         } else {
@@ -61,10 +63,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   }
 
   get projects(): IProject[] {
-    const projects = this.context.globalState.get<IProject[]>("projects");
-    if (projects === undefined) {
-      return [];
-    }
+    const projects = this.storage.projects;
     return projects;
   }
 
@@ -142,7 +141,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   }
 
   updateProjects(projectState: IProject[]) {
-    this.context.globalState.update("projects", projectState);
+    // this.context.globalState.update("projects", projectState);
     this.refresh();
   }
 }
@@ -202,9 +201,10 @@ export class MultiProjectExplorer {
         }
      */
 
-    // const projectPath = new ProjectPath(context);
-    // const storage = new Storage(projectPath.storageFilePath);
-    this.treeDataProvider = new MultiProjectProvider(context);
+    const projectPath = new ProjectPath(context);
+    const storage = new Storage(projectPath.storageLocation, STORAGE_FILE);
+    storage.load();
+    this.treeDataProvider = new MultiProjectProvider(storage);
 
     // globalState 도입 전 0.0.6 version 사용자의 경우 @legacy
     if (this.treeDataProvider.projects.length < 1) {
