@@ -21,8 +21,7 @@
     "onCommand:multiProjectExplorer.openProject",
     "onCommand:multiProjectExplorer.removeProject",
     "onCommand:bookmarkExplorer.addBookmark",
-    "onCommand:bookmarkExplorer.removeBookmark",
-    "onCommand:multiProjectExplorer.openSearch"
+    "onCommand:bookmarkExplorer.removeBookmark"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -58,6 +57,10 @@
         "icon": "$(debug-restart)"
       },
       {
+        "command": "multiProjectExplorer.renameProject",
+        "title": "Rename Project"
+      },
+      {
         "command": "multiProjectExplorer.openFile",
         "title": "Open File"
       },
@@ -88,12 +91,6 @@
       {
         "command": "multiProjectExplorer.openProject",
         "title": "Open Project",
-        "category": "Multi Project",
-        "icon": "$(settings-add)"
-      },
-      {
-        "command": "multiProjectExplorer.openSearch",
-        "title": "Open Search",
         "category": "Multi Project",
         "icon": "$(settings-add)"
       },
@@ -132,6 +129,10 @@
         },
         {
           "command": "multiProjectExplorer.openTerminal",
+          "when": "view == multiProjectExplorer && viewItem == project"
+        },
+        {
+          "command": "multiProjectExplorer.renameProject",
           "when": "view == multiProjectExplorer && viewItem == project"
         },
         {

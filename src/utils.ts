@@ -19,7 +19,7 @@ export function getFilePathFromUri(uriList: vscode.Uri[]): string[] {
 export function getFilePathFromProjectItem(projectItem: ProjectItem): string[] {
   const projectItemList = [projectItem];
 
-  return projectItemList.map(projectItem => projectItem.resourceUri.fsPath);
+  return projectItemList.map(projectItem => projectItem.project.path);
 }
 
 export function getFilePathFromBookmarkItem(bookmarkItem: BookmarkItem): string[] {
