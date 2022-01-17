@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
-import * as mkdirp from "mkdirp";
 import * as rimraf from "rimraf";
 
 export class FileStat implements vscode.FileStat {
@@ -36,7 +35,7 @@ export class FileStat implements vscode.FileStat {
   }
 }
 
-namespace _ {
+export namespace fsUtils {
   function handleResult<T>(resolve: (result: T) => void, reject: (error: Error) => void, error: Error | null | undefined, result: T): void {
     if (error) {
       reject(massageError(error));
@@ -85,6 +84,27 @@ namespace _ {
     return items.normalize("NFC");
   }
 
+  export function existsSync(path: string): boolean {
+    return fs.existsSync(path);
+  }
+
+  export function readFileSync(path: string, encoding: BufferEncoding = "utf8") {
+    return fs.readFileSync(path, { encoding });
+  }
+
+  export function writeFileSync(path: string, data: any): void {
+    return fs.writeFileSync(path, data);
+  }
+
+  export function mkdirSync(
+    path: string,
+    option?: fs.MakeDirectoryOptions & {
+      recursive: true;
+    }
+  ) {
+    return fs.mkdirSync(path, option);
+  }
+
   export function readdir(path: string): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
       fs.readdir(path, (error, children) => handleResult(resolve, reject, error, normalizeNFC(children)));
@@ -103,7 +123,7 @@ namespace _ {
     });
   }
 
-  export function writefile(path: string, content: Buffer): Promise<void> {
+  export function writefile(path: string, content: string | Buffer): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       fs.writeFile(path, content, error => handleResult(resolve, reject, error, void 0));
     });
@@ -121,10 +141,9 @@ namespace _ {
     });
   }
 
-  export function mkdir(path: string): Promise<void> {
+  export function mkdir(path: string, option?: fs.MakeDirectoryOptions): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      mkdirp(path);
-      resolve();
+      fs.mkdir(path, option, error => handleResult(resolve, reject, error, void 0));
     });
   }
 
@@ -153,13 +172,13 @@ export abstract class FileSystemProvider implements vscode.FileSystemProvider {
 
   watch(uri: vscode.Uri, options: { recursive: boolean; excludes: string[] }): vscode.Disposable {
     const watcher = fs.watch(uri.fsPath, { recursive: options.recursive }, async (event: string, filename: string | Buffer) => {
-      const filepath = path.join(uri.fsPath, _.normalizeNFC(filename.toString()));
+      const filepath = path.join(uri.fsPath, fsUtils.normalizeNFC(filename.toString()));
 
       // TODO support excludes (using minimatch library?)
 
       this._onDidChangeFile.fire([
         {
-          type: event === "change" ? vscode.FileChangeType.Changed : (await _.exists(filepath)) ? vscode.FileChangeType.Created : vscode.FileChangeType.Deleted,
+          type: event === "change" ? vscode.FileChangeType.Changed : (await fsUtils.exists(filepath)) ? vscode.FileChangeType.Created : vscode.FileChangeType.Deleted,
           uri: uri.with({ path: filepath }),
         } as vscode.FileChangeEvent,
       ]);
@@ -173,17 +192,7 @@ export abstract class FileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async _stat(path: string): Promise<FileStat> {
-    return new FileStat(await _.stat(path));
-  }
-
-  async isDirectory(uri: vscode.Uri) {
-    const stat = await this.stat(uri);
-    return stat.isDirectory === true;
-  }
-
-  async isFile(uri: vscode.Uri) {
-    const stat = await this.stat(uri);
-    return stat.isFile === true;
+    return new FileStat(await fsUtils.stat(path));
   }
 
   async filterUri(uriList: vscode.Uri[], type: vscode.FileType) {
@@ -202,7 +211,7 @@ export abstract class FileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async _readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
-    const children = await _.readdir(uri.fsPath);
+    const children = await fsUtils.readdir(uri.fsPath);
 
     const result: [string, vscode.FileType][] = [];
     for (let i = 0; i < children.length; i++) {
@@ -215,11 +224,11 @@ export abstract class FileSystemProvider implements vscode.FileSystemProvider {
   }
 
   createDirectory(uri: vscode.Uri): void | Thenable<void> {
-    return _.mkdir(uri.fsPath);
+    return fsUtils.mkdir(uri.fsPath);
   }
 
   readFile(uri: vscode.Uri): Uint8Array | Thenable<Uint8Array> {
-    return _.readfile(uri.fsPath);
+    return fsUtils.readfile(uri.fsPath);
   }
 
   writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean; overwrite: boolean }): void | Thenable<void> {
@@ -227,28 +236,28 @@ export abstract class FileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async _writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean; overwrite: boolean }): Promise<void> {
-    const exists = await _.exists(uri.fsPath);
+    const exists = await fsUtils.exists(uri.fsPath);
     if (!exists) {
       if (!options.create) {
         throw vscode.FileSystemError.FileNotFound();
       }
 
-      await _.mkdir(path.dirname(uri.fsPath));
+      await fsUtils.mkdir(path.dirname(uri.fsPath));
     } else {
       if (!options.overwrite) {
         throw vscode.FileSystemError.FileExists();
       }
     }
 
-    return _.writefile(uri.fsPath, content as Buffer);
+    return fsUtils.writefile(uri.fsPath, content as Buffer);
   }
 
   delete(uri: vscode.Uri, options: { recursive: boolean }): void | Thenable<void> {
     if (options.recursive) {
-      return _.rmrf(uri.fsPath);
+      return fsUtils.rmrf(uri.fsPath);
     }
 
-    return _.unlink(uri.fsPath);
+    return fsUtils.unlink(uri.fsPath);
   }
 
   rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): void | Thenable<void> {
@@ -256,20 +265,20 @@ export abstract class FileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async _rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): Promise<void> {
-    const exists = await _.exists(newUri.fsPath);
+    const exists = await fsUtils.exists(newUri.fsPath);
     if (exists) {
       if (!options.overwrite) {
         throw vscode.FileSystemError.FileExists();
       } else {
-        await _.rmrf(newUri.fsPath);
+        await fsUtils.rmrf(newUri.fsPath);
       }
     }
 
-    const parentExists = await _.exists(path.dirname(newUri.fsPath));
+    const parentExists = await fsUtils.exists(path.dirname(newUri.fsPath));
     if (!parentExists) {
-      await _.mkdir(path.dirname(newUri.fsPath));
+      await fsUtils.mkdir(path.dirname(newUri.fsPath));
     }
 
-    return _.rename(oldUri.fsPath, newUri.fsPath);
+    return fsUtils.rename(oldUri.fsPath, newUri.fsPath);
   }
 }

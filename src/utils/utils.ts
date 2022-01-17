@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
-import { BookmarkItem } from "./bookmarkExplorer";
-import { ProjectItem } from "./multiProjectExplorer";
+import * as path from "path";
+import { BookmarkItem } from "../bookmarkExplorer";
+import { ProjectItem } from "../multiProjectExplorer";
+import { IProject } from "../type";
 
 type SourceType = vscode.Uri[] | ProjectItem | BookmarkItem;
 export function getFilePath(source: SourceType): string[] {
@@ -25,9 +27,5 @@ export function getFilePathFromProjectItem(projectItem: ProjectItem): string[] {
 export function getFilePathFromBookmarkItem(bookmarkItem: BookmarkItem): string[] {
   const bookmarkItemList = [bookmarkItem];
 
-  return bookmarkItemList.map(bookmarkItem => bookmarkItem.resourceUri.fsPath);
+  return bookmarkItemList.map(bookmarkItem => bookmarkItem.bookmark.path);
 }
-
-export async function filterDirectory() {}
-
-export async function filterFile() {}

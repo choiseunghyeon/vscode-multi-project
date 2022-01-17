@@ -1,22 +1,22 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { getFilePath } from "./utils";
+import { getFilePath } from "./utils/utils";
 import { FileSystemProvider } from "./FileSystemProvider";
 import { IProject } from "./type";
 import { showInputBox } from "./quickPick";
-import { ProjectPath, Storage } from "./Storage";
-import { STORAGE_FILE } from "./constants";
-
-//#region Utilities
-
-//#endregion
+import { StoragePath, ProjectStorage } from "./Storage";
+import { PROJECT_STORAGE_FILE } from "./constants";
 
 export class MultiProjectProvider extends FileSystemProvider implements vscode.TreeDataProvider<ProjectItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<ProjectItem | undefined | void> = new vscode.EventEmitter<ProjectItem | undefined | void>();
   readonly onDidChangeTreeData: vscode.Event<ProjectItem | undefined | void> = this._onDidChangeTreeData.event;
 
-  constructor(private storage: Storage) {
+  constructor(private storage: ProjectStorage) {
     super();
+    storage.load();
+    storage.onDidChangeFile(e => {
+      this.refresh();
+    });
   }
 
   // get storageLocation(): string {
@@ -33,13 +33,13 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     return vscode.workspace.getConfiguration("multiProject").get("projectPaths", []);
   }
 
-  async updateProjectPaths(projectPaths: string[]) {
-    await vscode.workspace.getConfiguration("multiProject").update("projectPaths", projectPaths, vscode.ConfigurationTarget.Global);
-    await this.updateProjectStateWith(this.projectPaths);
-  }
+  // async updateProjectPaths(projectPaths: string[]) {
+  //   await vscode.workspace.getConfiguration("multiProject").update("projectPaths", projectPaths, vscode.ConfigurationTarget.Global);
+  //   await this.updateProjectStateWith(this.projectPaths);
+  // }
 
-  loadProjectsFile() {
-    this.storage.load();
+  loadStorage() {
+    // this.storage.load();
     // const errorLoading: string = this.storage.load();
     // // how to handle now, since the extension starts 'at load'?
     // if (errorLoading !== "") {
@@ -51,7 +51,6 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     //         if (typeof option === "undefined") {
     //             return;
     //         }
-
     //         if (option.title === "Open File") {
     //             vscode.commands.executeCommand("projectManager.editProjects");
     //         } else {
@@ -63,8 +62,11 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   }
 
   get projects(): IProject[] {
-    const projects = this.storage.projects;
-    return projects;
+    return this.storage.projects;
+  }
+
+  updateProjects(projects: IProject[]) {
+    this.storage.update(projects);
   }
 
   get ignoredFolders(): string[] {
@@ -97,10 +99,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   private filterChildren(children: [string, vscode.FileType][], filepath: string) {
     return children.reduce((result: ProjectItem[], [name, type]) => {
       if (this.validateFile(name, type)) {
-        const project: IProject = {
-          path: path.join(filepath, name),
-          name: name,
-        };
+        const project: IProject = ProjectStorage.createDefaultProject(path.join(filepath, name), name);
         result.push(new ProjectItem(project, type));
       }
       return result;
@@ -120,38 +119,13 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
       return true;
     }
   }
-
-  updateProjectStateWith(projectPaths: string[]) {
-    // projectState object로 변환 시 proejctPaths 변경 시 update 하는 비용 감소함
-    const projects = this.projects;
-    const newProject = projectPaths.map(projectPath => {
-      const existProject = projects.find(project => project.path === projectPath);
-      if (existProject) {
-        return {
-          ...existProject,
-        };
-      }
-
-      return {
-        path: projectPath,
-        name: projectPath.split(path.sep).pop() || projectPath,
-      };
-    });
-    this.updateProjects(newProject);
-  }
-
-  updateProjects(projectState: IProject[]) {
-    // this.context.globalState.update("projects", projectState);
-    this.refresh();
-  }
 }
 
 export class ProjectItem extends vscode.TreeItem {
-  projectLabel: string | undefined;
+  label: string | undefined;
   constructor(public project: IProject, public readonly type: vscode.FileType) {
     super(project.name, type === vscode.FileType.File ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
     if (this.type === vscode.FileType.Unknown) {
-      this.projectLabel = project.name;
       this.label = project.name;
       this.iconPath = new vscode.ThemeIcon("root-folder");
     }
@@ -159,7 +133,7 @@ export class ProjectItem extends vscode.TreeItem {
     this.setContextValue();
 
     if (type === vscode.FileType.File) {
-      this.command = { command: "multiProjectExplorer.openFile", title: "Open File", arguments: [this.resourceUri] };
+      this.command = { command: "multiProjectExplorer.openFile", title: "Open File", arguments: [vscode.Uri.file(project.path)] };
       this.contextValue = "file";
     }
   }
@@ -190,26 +164,14 @@ export class ProjectItem extends vscode.TreeItem {
 export class MultiProjectExplorer {
   treeDataProvider: MultiProjectProvider;
   constructor(context: vscode.ExtensionContext) {
-    /**
-     *         {
-          "command": "multiProjectExplorer.aliases",
-          "when": "view == multiProjectExplorer && viewItem == project"
-        },
-        {
-          "command": "multiProjectExplorer.bookmark",
-          "when": "view == multiProjectExplorer && viewItem == file"
-        }
-     */
-
-    const projectPath = new ProjectPath(context);
-    const storage = new Storage(projectPath.storageLocation, STORAGE_FILE);
-    storage.load();
+    const projectPath = new StoragePath(context);
+    const storage = new ProjectStorage(projectPath.storageLocation, PROJECT_STORAGE_FILE);
     this.treeDataProvider = new MultiProjectProvider(storage);
 
-    // globalState 도입 전 0.0.6 version 사용자의 경우 @legacy
-    if (this.treeDataProvider.projects.length < 1) {
-      this.treeDataProvider.updateProjectStateWith(this.treeDataProvider.projectPaths);
-    }
+    // storage 도입 전 0.0.6 version 사용자의 경우 @legacy
+    // if (this.treeDataProvider.projects.length < 1) {
+    //   this.treeDataProvider.updateProjectStateWith(this.treeDataProvider.projectPaths);
+    // }
     context.subscriptions.push(vscode.window.createTreeView("multiProjectExplorer", { treeDataProvider: this.treeDataProvider }));
     vscode.commands.registerCommand("multiProjectExplorer.openFile", resource => this.openResource(resource));
     vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => this.treeDataProvider.refresh());
@@ -222,7 +184,6 @@ export class MultiProjectExplorer {
     context.subscriptions.push(
       vscode.commands.registerCommand("multiProjectExplorer.renameProject", async (treeItem: ProjectItem) => {
         // console.log(args);
-        debugger;
         const projects = this.treeDataProvider.projects;
         const project = projects.find(project => project.path === treeItem.project.path);
         if (project === undefined) {
@@ -240,8 +201,9 @@ export class MultiProjectExplorer {
         // console.log(args);
         const filteredUriList = await this.treeDataProvider.filterUri(uriList, vscode.FileType.File);
         const filePathList = getFilePath(filteredUriList);
-        const resultPaths = this.treeDataProvider.projectPaths.concat(filePathList);
-        this.treeDataProvider.updateProjectPaths(resultPaths);
+        const projects = filePathList.map(projectPath => ProjectStorage.createDefaultProject(projectPath));
+        const resultProjects = this.treeDataProvider.projects.concat(projects);
+        this.treeDataProvider.updateProjects(resultProjects);
       })
     );
 
@@ -249,20 +211,14 @@ export class MultiProjectExplorer {
       vscode.commands.registerCommand("multiProjectExplorer.removeProject", (treeItem: ProjectItem) => {
         // console.log(args);
         const filePathList = getFilePath(treeItem);
-        const resultPaths = this.treeDataProvider.projectPaths.filter(projectPath => !filePathList.includes(projectPath));
-        this.treeDataProvider.updateProjectPaths(resultPaths);
+        const resultProjects = this.treeDataProvider.projects.filter(project => !filePathList.includes(project.path));
+        this.treeDataProvider.updateProjects(resultProjects);
       })
     );
 
     context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration(async cfg => {
-        if (cfg.affectsConfiguration("multiProject.projectPaths")) {
-          // filePath 모양 맞추기 c, d드라이브의 경우 대소문자로 들어올 수 있음
-          const resultPaths = this.treeDataProvider.projectPaths.map(projectPath => vscode.Uri.file(projectPath).fsPath);
-          this.treeDataProvider.updateProjectPaths(resultPaths);
-        }
-
-        if (cfg.affectsConfiguration("multiProject.fileName") || cfg.affectsConfiguration("multiProject.projectPaths") || cfg.affectsConfiguration("multiProject.ignoredFolders")) {
+        if (cfg.affectsConfiguration("multiProject.fileName") || cfg.affectsConfiguration("multiProject.ignoredFolders")) {
           this.treeDataProvider.refresh();
         }
       })
@@ -314,7 +270,7 @@ export class MultiProjectExplorer {
 
     const projectItems = await this.treeDataProvider.getChildren();
     const items: ProjectQuickPickItem[] = projectItems.map(projectItem => ({
-      label: projectItem?.project.name || "프로젝트 라벨이 없습니다.",
+      label: projectItem.label || "프로젝트 라벨이 없습니다.",
       projectItem,
     }));
 
