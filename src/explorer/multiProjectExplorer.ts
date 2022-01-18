@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { getFilePath } from "./utils/utils";
-import { FileSystemProvider } from "./FileSystemProvider";
-import { IProject } from "./type";
-import { showInputBox } from "./quickPick";
-import { StoragePath, ProjectStorage } from "./Storage";
-import { PROJECT_STORAGE_FILE } from "./constants";
+import { getFilePath } from "../utils/utils";
+import { FileSystemProvider } from "../FileSystemProvider";
+import { IProject } from "../type";
+import { showInputBox } from "../quickPick";
+import { StoragePath, ProjectStorage } from "../Storage";
+import { PROJECT_STORAGE_FILE } from "../constants";
 
 export class MultiProjectProvider extends FileSystemProvider implements vscode.TreeDataProvider<ProjectItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<ProjectItem | undefined | void> = new vscode.EventEmitter<ProjectItem | undefined | void>();
@@ -109,12 +109,17 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   private validateFile(name: string, type: vscode.FileType): boolean {
     // 폴더 검증
     if (type === vscode.FileType.Directory) {
-      if (this.ignoredFolders.some(ignoreFolderName => ignoreFolderName === name)) return false;
+      if (this.ignoredFolders.some(ignoreFolderName => ignoreFolderName === name)) {
+        return false;
+      }
       return true;
     } else {
       // 파일 검증
-      if (this.fileName === "*") return true;
-      else if (name.includes(this.fileName)) return true;
+      if (this.fileName === "*") {
+        return true;
+      } else if (name.includes(this.fileName)) {
+        return true;
+      }
 
       return true;
     }

@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
-import * as path from "path";
-import { BookmarkItem } from "../bookmarkExplorer";
-import { ProjectItem } from "../multiProjectExplorer";
-import { IProject } from "../type";
+import { BookmarkItem } from "../explorer/bookmarkExplorer";
+import { ProjectItem } from "../explorer/multiProjectExplorer";
 
 type SourceType = vscode.Uri[] | ProjectItem | BookmarkItem;
 export function getFilePath(source: SourceType): string[] {

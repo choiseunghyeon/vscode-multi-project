@@ -22,3 +22,4 @@
   - 등록된 프로젝트의 task list up해서 보여준 후 task flow에 등록하도록 제공할 예정
     - 한계: 현재 workspace에 있는 task만 가져옴 vscode.tasks.fetchTasks()
     - multi-root workspaces를 사용하면 workspaceFolders로 등록된 각 workspace에서 tasks 정보 가져올 수 있지만 검색 및 explorer 그리고 ctrl + shift + b(run build tasks)또한 통합되어 tasks들이 나옴 - 불편해짐
+- 기존 configuration 사용되던 데이터 globarStorageUri로 이전

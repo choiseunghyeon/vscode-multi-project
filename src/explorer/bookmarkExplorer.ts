@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { getFilePath } from "./utils/utils";
-import { FileSystemProvider } from "./FileSystemProvider";
-import { BookmarkStorage, StoragePath } from "./Storage";
-import { BOOKMARK_STORAGE_FILE } from "./constants";
-import { IBookmark } from "./type";
+import { getFilePath } from "../utils/utils";
+import { FileSystemProvider } from "../FileSystemProvider";
+import { BookmarkStorage, StoragePath } from "../Storage";
+import { BOOKMARK_STORAGE_FILE } from "../constants";
+import { IBookmark } from "../type";
 import { ProjectItem } from "./multiProjectExplorer";
 
 export class BookmarkProvider extends FileSystemProvider implements vscode.TreeDataProvider<BookmarkItem> {
