@@ -2,10 +2,11 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { getFilePath } from "../utils/utils";
 import { FileSystemProvider } from "../FileSystemProvider";
-import { BookmarkStorage, StoragePath } from "../Storage";
 import { BOOKMARK_STORAGE_FILE } from "../constants";
 import { IBookmark } from "../type";
 import { ProjectItem } from "./multiProjectExplorer";
+import { BookmarkStorage } from "../storage/bookmarkStorage";
+import { StoragePath } from "../storage/storage";
 
 export class BookmarkProvider extends FileSystemProvider implements vscode.TreeDataProvider<BookmarkItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<BookmarkItem | undefined | void> = new vscode.EventEmitter<BookmarkItem | undefined | void>();
@@ -15,12 +16,13 @@ export class BookmarkProvider extends FileSystemProvider implements vscode.TreeD
     super();
     storage.load();
     storage.onDidChangeFile(e => {
+      storage.syncDataFromDiskFile();
       this.refresh();
     });
   }
 
   get bookmarks(): IBookmark[] {
-    return this.storage.bookmarks;
+    return this.storage.data;
     // return vscode.workspace.getConfiguration("multiProject").get("bookmarks", []);
   }
 
@@ -89,8 +91,16 @@ export class BookmarkExplorer {
     const storage = new BookmarkStorage(bookmarkPath.storageLocation, BOOKMARK_STORAGE_FILE);
     this.treeDataProvider = new BookmarkProvider(storage);
 
+    // storage 도입 전 0.0.6 version 사용자의 경우 @legacy
+    if (this.treeDataProvider.bookmarks.length < 1) {
+      const bookmarkPaths = vscode.workspace.getConfiguration("multiProject").get("bookmarks", []);
+      const bookmarks = bookmarkPaths.map(bookmarkPath => BookmarkStorage.createDefaultBookmark(bookmarkPath));
+      storage.update(bookmarks);
+    }
+
     context.subscriptions.push(vscode.window.createTreeView("bookmarkExplorer", { treeDataProvider: this.treeDataProvider }));
     vscode.commands.registerCommand("bookmarkExplorer.openFile", resource => this.openResource(resource));
+    vscode.commands.registerCommand("bookmarkExplorer.editBookmark", () => this.openResource(storage._uri));
     // vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => treeDataProvider.refresh());
 
     context.subscriptions.push(
@@ -111,7 +121,6 @@ export class BookmarkExplorer {
         const filePathlist = getFilePath(treeItem);
         const resultBookmarks = this.treeDataProvider.bookmarks.filter(bookmark => !filePathlist.includes(bookmark.path));
         this.treeDataProvider.updateBookmarks(resultBookmarks);
-        // vscode.workspace.getConfiguration("multiProject").update("bookmarks", reulstPaths, vscode.ConfigurationTarget.Global);
       })
     );
   }

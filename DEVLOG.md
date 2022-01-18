@@ -10,6 +10,7 @@
 - Add Multiple Project(다중 선택된 폴더 프로젝트로 지정) - file 선택되더라도 filtering됨
 - 프로젝트 이름 변경(aliases)
 - 필요한 값을 가져오기 위해 configuration 대신 globalStorage 사용으로 변경 (project, bookmark)
+- 기존 configuration 사용되던 데이터 globarStorageUri로 이전
 
 ## 개발 예정
 
@@ -22,4 +23,22 @@
   - 등록된 프로젝트의 task list up해서 보여준 후 task flow에 등록하도록 제공할 예정
     - 한계: 현재 workspace에 있는 task만 가져옴 vscode.tasks.fetchTasks()
     - multi-root workspaces를 사용하면 workspaceFolders로 등록된 각 workspace에서 tasks 정보 가져올 수 있지만 검색 및 explorer 그리고 ctrl + shift + b(run build tasks)또한 통합되어 tasks들이 나옴 - 불편해짐
-- 기존 configuration 사용되던 데이터 globarStorageUri로 이전
+
+## 기능
+
+- Project Explorer
+
+  1. alises 별칭 지정
+  2. 프로젝트 추가(다중) / 삭제
+  3. 특정 폴더 숨기기(ignore folder)
+  4. 프로젝트 터미널 오픈
+  5. 프로젝트 빠르게 열기
+
+- Bookmark Explorer
+
+  1. alises 별칭 지정
+  2. Bookmark 추가(다중) / 삭제
+  3. editor 열기
+
+- Storage
+  1. 필요한 데이터를 저장 및 Data Model 역할

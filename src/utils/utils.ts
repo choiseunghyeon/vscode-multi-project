@@ -16,6 +16,7 @@ export function getFilePath(source: SourceType): string[] {
 export function getFilePathFromUri(uriList: vscode.Uri[]): string[] {
   return uriList.map(uri => uri.fsPath);
 }
+
 export function getFilePathFromProjectItem(projectItem: ProjectItem): string[] {
   const projectItemList = [projectItem];
 

@@ -17,10 +17,12 @@
   "activationEvents": [
     "onView:multiProjectExplorer",
     "onView:bookmarkExplorer",
+    "onCommand:multiProjectExplorer.editProject",
     "onCommand:multiProjectExplorer.addProject",
+    "onCommand:multiProjectExplorer.renameProject",
     "onCommand:multiProjectExplorer.openProject",
     "onCommand:multiProjectExplorer.removeProject",
-    "onCommand:multiProjectExplorer.renameProject",
+    "onCommand:bookmarkExplorer.editBookmark",
     "onCommand:bookmarkExplorer.addBookmark",
     "onCommand:bookmarkExplorer.removeBookmark"
   ],
@@ -58,12 +60,22 @@
         "icon": "$(debug-restart)"
       },
       {
+        "command": "multiProjectExplorer.editProject",
+        "title": "Edit Project",
+        "icon": "$(notebook-open-as-text)"
+      },
+      {
         "command": "multiProjectExplorer.renameProject",
         "title": "Rename Project"
       },
       {
         "command": "multiProjectExplorer.openFile",
         "title": "Open File"
+      },
+      {
+        "command": "bookmarkExplorer.editBookmark",
+        "title": "Edit Bookmark",
+        "icon": "$(notebook-open-as-text)"
       },
       {
         "command": "bookmarkExplorer.openFile",
@@ -120,6 +132,16 @@
           "command": "multiProjectExplorer.refreshEntry",
           "when": "view == multiProjectExplorer",
           "group": "navigation"
+        },
+        {
+          "command": "multiProjectExplorer.editProject",
+          "when": "view == multiProjectExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "bookmarkExplorer.editBookmark",
+          "when": "view == bookmarkExplorer",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -169,14 +191,6 @@
               "type": "string"
             },
             "description": "표시 하지 않을 폴더를 설정합니다."
-          },
-          "multiProject.bookmarks": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "default": [],
-            "description": "즐겨찾기 파일을 설정합니다."
           }
         }
       }
@@ -193,6 +207,7 @@
   "devDependencies": {
     "@types/chai": "^4.3.0",
     "@types/glob": "^7.1.4",
+    "@types/lodash": "^4.14.178",
     "@types/mkdirp": "^1.0.2",
     "@types/mocha": "^9.0.0",
     "@types/node": "14.x",

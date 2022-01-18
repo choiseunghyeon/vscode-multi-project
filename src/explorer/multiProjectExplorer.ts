@@ -4,8 +4,9 @@ import { getFilePath } from "../utils/utils";
 import { FileSystemProvider } from "../FileSystemProvider";
 import { IProject } from "../type";
 import { showInputBox } from "../quickPick";
-import { StoragePath, ProjectStorage } from "../Storage";
 import { PROJECT_STORAGE_FILE } from "../constants";
+import { ProjectStorage } from "../storage/projectStorage";
+import { StoragePath } from "../storage/storage";
 
 export class MultiProjectProvider extends FileSystemProvider implements vscode.TreeDataProvider<ProjectItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<ProjectItem | undefined | void> = new vscode.EventEmitter<ProjectItem | undefined | void>();
@@ -15,6 +16,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     super();
     storage.load();
     storage.onDidChangeFile(e => {
+      storage.syncDataFromDiskFile();
       this.refresh();
     });
   }
@@ -29,40 +31,8 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     return vscode.workspace.getConfiguration("multiProject").get("fileName", "*");
   }
 
-  get projectPaths(): string[] {
-    return vscode.workspace.getConfiguration("multiProject").get("projectPaths", []);
-  }
-
-  // async updateProjectPaths(projectPaths: string[]) {
-  //   await vscode.workspace.getConfiguration("multiProject").update("projectPaths", projectPaths, vscode.ConfigurationTarget.Global);
-  //   await this.updateProjectStateWith(this.projectPaths);
-  // }
-
-  loadStorage() {
-    // this.storage.load();
-    // const errorLoading: string = this.storage.load();
-    // // how to handle now, since the extension starts 'at load'?
-    // if (errorLoading !== "") {
-    //     const optionOpenFile = <vscode.MessageItem> {
-    //         title: "Open File"
-    //     };
-    //     vscode.window.showErrorMessage("Error loading projects.json file. Message: " + errorLoading, optionOpenFile).then(option => {
-    //         // nothing selected
-    //         if (typeof option === "undefined") {
-    //             return;
-    //         }
-    //         if (option.title === "Open File") {
-    //             vscode.commands.executeCommand("projectManager.editProjects");
-    //         } else {
-    //             return;
-    //         }
-    //     });
-    //     return null;
-    // }
-  }
-
   get projects(): IProject[] {
-    return this.storage.projects;
+    return this.storage.data;
   }
 
   updateProjects(projects: IProject[]) {
@@ -73,7 +43,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     return vscode.workspace.getConfiguration("multiProject").get("ignoredFolders", []);
   }
 
-  refresh(): void {
+  public refresh(): void {
     this._onDidChangeTreeData.fire();
   }
 
@@ -130,6 +100,7 @@ export class ProjectItem extends vscode.TreeItem {
   label: string | undefined;
   constructor(public project: IProject, public readonly type: vscode.FileType) {
     super(project.name, type === vscode.FileType.File ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
+    this.resourceUri = vscode.Uri.file(project.path);
     if (this.type === vscode.FileType.Unknown) {
       this.label = project.name;
       this.iconPath = new vscode.ThemeIcon("root-folder");
@@ -138,7 +109,7 @@ export class ProjectItem extends vscode.TreeItem {
     this.setContextValue();
 
     if (type === vscode.FileType.File) {
-      this.command = { command: "multiProjectExplorer.openFile", title: "Open File", arguments: [vscode.Uri.file(project.path)] };
+      this.command = { command: "multiProjectExplorer.openFile", title: "Open File", arguments: [this.resourceUri] };
       this.contextValue = "file";
     }
   }
@@ -174,11 +145,15 @@ export class MultiProjectExplorer {
     this.treeDataProvider = new MultiProjectProvider(storage);
 
     // storage 도입 전 0.0.6 version 사용자의 경우 @legacy
-    // if (this.treeDataProvider.projects.length < 1) {
-    //   this.treeDataProvider.updateProjectStateWith(this.treeDataProvider.projectPaths);
-    // }
+    if (this.treeDataProvider.projects.length < 1) {
+      const projectPaths = vscode.workspace.getConfiguration("multiProject").get("projectPaths", []);
+      const projects = projectPaths.map(projectPath => ProjectStorage.createDefaultProject(projectPath));
+      storage.update(projects);
+    }
+
     context.subscriptions.push(vscode.window.createTreeView("multiProjectExplorer", { treeDataProvider: this.treeDataProvider }));
     vscode.commands.registerCommand("multiProjectExplorer.openFile", resource => this.openResource(resource));
+    vscode.commands.registerCommand("multiProjectExplorer.editProject", () => this.openResource(storage._uri));
     vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => this.treeDataProvider.refresh());
     vscode.commands.registerCommand("multiProjectExplorer.openFolder", async (treeItem: ProjectItem) => {
       const uri = treeItem.resourceUri;
