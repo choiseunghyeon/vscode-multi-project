@@ -179,7 +179,7 @@ export class MultiProjectExplorer {
     context.subscriptions.push(
       vscode.commands.registerCommand("multiProjectExplorer.addProject", async (uri: vscode.Uri, uriList: vscode.Uri[]) => {
         // console.log(args);
-        const filteredUriList = await this.treeDataProvider.filterUri(uriList, vscode.FileType.File);
+        const filteredUriList = await this.treeDataProvider.filterType(uriList, vscode.FileType.File);
         const filePathList = getFilePath(filteredUriList);
         const projects = filePathList.map(projectPath => ProjectStorage.createDefaultProject(projectPath));
         const resultProjects = this.treeDataProvider.projects.concat(projects);
