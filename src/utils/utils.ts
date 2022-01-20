@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { BookmarkItem } from "../explorer/bookmarkExplorer";
 import { ProjectItem } from "../explorer/multiProjectExplorer";
+import { IRegisterCommand } from "../type";
 
 type SourceType = vscode.Uri[] | ProjectItem | BookmarkItem;
 export function getFilePath(source: SourceType): string[] {
@@ -27,4 +28,8 @@ export function getFilePathFromBookmarkItem(bookmarkItem: BookmarkItem): string[
   const bookmarkItemList = [bookmarkItem];
 
   return bookmarkItemList.map(bookmarkItem => bookmarkItem.bookmark.path);
+}
+
+export function createCommand(name: string, callback: Function): IRegisterCommand {
+  return { name, callback };
 }

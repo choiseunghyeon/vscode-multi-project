@@ -195,7 +195,7 @@ export abstract class FileSystemProvider implements vscode.FileSystemProvider {
     return new FileStat(await fsUtils.stat(path));
   }
 
-  async filterUri(uriList: vscode.Uri[], type: vscode.FileType) {
+  async filterType(uriList: vscode.Uri[], type: vscode.FileType) {
     const result = [];
     for (const uri of uriList) {
       const stat = await this.stat(uri);

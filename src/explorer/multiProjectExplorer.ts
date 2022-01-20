@@ -1,18 +1,19 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { getFilePath } from "../utils/utils";
+import { createCommand, getFilePath } from "../utils/utils";
 import { FileSystemProvider } from "../FileSystemProvider";
-import { IProject } from "../type";
+import { IProject, IRegisterCommand } from "../type";
 import { showInputBox } from "../quickPick";
 import { PROJECT_STORAGE_FILE } from "../constants";
 import { ProjectStorage } from "../storage/projectStorage";
 import { StoragePath } from "../storage/storage";
+import { openResource } from "../utils/native";
 
 export class MultiProjectProvider extends FileSystemProvider implements vscode.TreeDataProvider<ProjectItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<ProjectItem | undefined | void> = new vscode.EventEmitter<ProjectItem | undefined | void>();
   readonly onDidChangeTreeData: vscode.Event<ProjectItem | undefined | void> = this._onDidChangeTreeData.event;
 
-  constructor(private storage: ProjectStorage) {
+  constructor(public storage: ProjectStorage) {
     super();
     storage.load();
     storage.onDidChangeFile(e => {
@@ -151,85 +152,92 @@ export class MultiProjectExplorer {
       storage.update(projects);
     }
 
-    context.subscriptions.push(vscode.window.createTreeView("multiProjectExplorer", { treeDataProvider: this.treeDataProvider }));
-    vscode.commands.registerCommand("multiProjectExplorer.openFile", resource => this.openResource(resource));
-    vscode.commands.registerCommand("multiProjectExplorer.editProject", () => this.openResource(storage._uri));
-    vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => this.treeDataProvider.refresh());
-    vscode.commands.registerCommand("multiProjectExplorer.openFolder", async (treeItem: ProjectItem) => {
-      const uri = treeItem.resourceUri;
-      const openInNewWindow = true;
-      await vscode.commands.executeCommand("vscode.openFolder", uri, openInNewWindow);
+    vscode.window.createTreeView("multiProjectExplorer", { treeDataProvider: this.treeDataProvider });
+    vscode.workspace.onDidChangeConfiguration(async cfg => {
+      if (cfg.affectsConfiguration("multiProject.fileName") || cfg.affectsConfiguration("multiProject.ignoredFolders")) {
+        this.refresh();
+      }
     });
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.renameProject", async (treeItem: ProjectItem) => {
-        // console.log(args);
-        const projects = this.treeDataProvider.projects;
-        const project = projects.find(project => project.path === treeItem.project.path);
-        if (project === undefined) {
-          return;
-        }
-
-        const newName = await showInputBox(project.name, "변경하실 이름을 입력해주세요");
-        project.name = newName ?? project.name;
-        this.treeDataProvider.updateProjects(projects);
-      })
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.addProject", async (uri: vscode.Uri, uriList: vscode.Uri[]) => {
-        // console.log(args);
-        const filteredUriList = await this.treeDataProvider.filterType(uriList, vscode.FileType.File);
-        const filePathList = getFilePath(filteredUriList);
-        const projects = filePathList.map(projectPath => ProjectStorage.createDefaultProject(projectPath));
-        const resultProjects = this.treeDataProvider.projects.concat(projects);
-        this.treeDataProvider.updateProjects(resultProjects);
-      })
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.removeProject", (treeItem: ProjectItem) => {
-        // console.log(args);
-        const filePathList = getFilePath(treeItem);
-        const resultProjects = this.treeDataProvider.projects.filter(project => !filePathList.includes(project.path));
-        this.treeDataProvider.updateProjects(resultProjects);
-      })
-    );
-
-    context.subscriptions.push(
-      vscode.workspace.onDidChangeConfiguration(async cfg => {
-        if (cfg.affectsConfiguration("multiProject.fileName") || cfg.affectsConfiguration("multiProject.ignoredFolders")) {
-          this.treeDataProvider.refresh();
-        }
-      })
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.openTerminal", (treeItem: ProjectItem) => {
-        const filePathList = getFilePath(treeItem);
-        filePathList.forEach(filePath => {
-          const terminal = this.getProjectTerminal(filePath);
-          terminal.show();
-          // 한글 지원 안됌 한글의 경우 ''로 감싸면 가능
-          terminal.sendText(`cd ${filePath}`);
-        });
-      })
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand("multiProjectExplorer.openProject", async () => {
-        const selectedQuickPickItem = await this.selectProject();
-
-        if (!selectedQuickPickItem) return;
-
-        const openInNewWindow = true;
-        await vscode.commands.executeCommand("vscode.openFolder", selectedQuickPickItem.projectItem.resourceUri, openInNewWindow);
-      })
-    );
   }
 
-  private openResource(resource: vscode.Uri): void {
-    vscode.window.showTextDocument(resource);
+  public getCommands() {
+    return [
+      createCommand("multiProjectExplorer.openFile", this.openFile),
+      createCommand("multiProjectExplorer.editProject", this.openProjectFile),
+      createCommand("multiProjectExplorer.refreshEntry", this.refresh),
+      createCommand("multiProjectExplorer.openFolder", this.openFolder),
+      createCommand("multiProjectExplorer.renameProject", this.renameProject),
+      createCommand("multiProjectExplorer.addProject", this.addProject),
+      createCommand("multiProjectExplorer.removeProject", this.removeProject),
+      createCommand("multiProjectExplorer.openTerminal", this.openTerminal),
+      createCommand("multiProjectExplorer.openProject", this.openProject),
+    ];
+  }
+
+  openProjectFile() {
+    openResource(this.treeDataProvider.storage._uri);
+  }
+
+  openFile(resource: any) {
+    openResource(resource);
+  }
+
+  refresh() {
+    this.treeDataProvider.refresh();
+  }
+
+  async openFolder(treeItem: ProjectItem) {
+    const uri = treeItem.resourceUri;
+    const openInNewWindow = true;
+    await vscode.commands.executeCommand("vscode.openFolder", uri, openInNewWindow);
+  }
+
+  async renameProject(treeItem: ProjectItem) {
+    // console.log(args);
+    const projects = this.treeDataProvider.projects;
+    const project = projects.find(project => project.path === treeItem.project.path);
+    if (project === undefined) {
+      return;
+    }
+
+    const newName = await showInputBox(project.name, "변경하실 이름을 입력해주세요");
+    project.name = newName ?? project.name;
+    this.treeDataProvider.updateProjects(projects);
+  }
+
+  async addProject(uri: vscode.Uri, uriList: vscode.Uri[]) {
+    // console.log(args);
+    const filteredUriList = await this.treeDataProvider.filterType(uriList, vscode.FileType.File);
+    const filePathList = getFilePath(filteredUriList);
+    const projects = filePathList.map(projectPath => ProjectStorage.createDefaultProject(projectPath));
+    const resultProjects = this.treeDataProvider.projects.concat(projects);
+    this.treeDataProvider.updateProjects(resultProjects);
+  }
+
+  removeProject(treeItem: ProjectItem) {
+    // console.log(args);
+    const filePathList = getFilePath(treeItem);
+    const resultProjects = this.treeDataProvider.projects.filter(project => !filePathList.includes(project.path));
+    this.treeDataProvider.updateProjects(resultProjects);
+  }
+
+  openTerminal(treeItem: ProjectItem) {
+    const filePathList = getFilePath(treeItem);
+    filePathList.forEach(filePath => {
+      const terminal = this.getProjectTerminal(filePath);
+      terminal.show();
+      // 한글 지원 안됌 한글의 경우 ''로 감싸면 가능
+      terminal.sendText(`cd ${filePath}`);
+    });
+  }
+
+  async openProject() {
+    const selectedQuickPickItem = await this.selectProject();
+
+    if (!selectedQuickPickItem) return;
+
+    const openInNewWindow = true;
+    await vscode.commands.executeCommand("vscode.openFolder", selectedQuickPickItem.projectItem.resourceUri, openInNewWindow);
   }
 
   private getProjectTerminal(filePath: string) {
