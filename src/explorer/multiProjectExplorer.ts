@@ -140,8 +140,8 @@ export class ProjectItem extends vscode.TreeItem {
 
 export class MultiProjectExplorer {
   treeDataProvider: MultiProjectProvider;
-  constructor(context: vscode.ExtensionContext) {
-    const projectPath = new StoragePath(context);
+  constructor(globalStoragePath: string) {
+    const projectPath = new StoragePath(globalStoragePath);
     const storage = new ProjectStorage(projectPath.storageLocation, PROJECT_STORAGE_FILE);
     this.treeDataProvider = new MultiProjectProvider(storage);
 
@@ -234,8 +234,9 @@ export class MultiProjectExplorer {
   async openProject() {
     const selectedQuickPickItem = await this.selectProject();
 
-    if (!selectedQuickPickItem) return;
-
+    if (!selectedQuickPickItem) {
+      return;
+    }
     const openInNewWindow = true;
     await vscode.commands.executeCommand("vscode.openFolder", selectedQuickPickItem.projectItem.resourceUri, openInNewWindow);
   }

@@ -23,8 +23,8 @@ const registerCommand = (thisArg: any, command: IRegisterCommand) => {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  const multiProjectExplorer = new MultiProjectExplorer(context);
-  const bookmarkExplorer = new BookmarkExplorer(context);
+  const multiProjectExplorer = new MultiProjectExplorer(context.globalStorageUri.fsPath);
+  const bookmarkExplorer = new BookmarkExplorer(context.globalStorageUri.fsPath);
   const units = [];
   units.push(multiProjectExplorer, bookmarkExplorer);
   addSubscriptions(context, units);

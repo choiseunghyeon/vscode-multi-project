@@ -65,7 +65,7 @@ export class BookmarkProvider extends FileSystemProvider implements vscode.TreeD
 }
 
 export class BookmarkItem extends vscode.TreeItem {
-  label: string | undefined;
+  label: string;
   constructor(public bookmark: IBookmark, public readonly type: vscode.FileType) {
     super(bookmark.name, vscode.TreeItemCollapsibleState.None);
 
@@ -87,8 +87,8 @@ export class BookmarkItem extends vscode.TreeItem {
 
 export class BookmarkExplorer {
   treeDataProvider: BookmarkProvider;
-  constructor(context: vscode.ExtensionContext) {
-    const bookmarkPath = new StoragePath(context);
+  constructor(globalStoragePath: string) {
+    const bookmarkPath = new StoragePath(globalStoragePath);
     const storage = new BookmarkStorage(bookmarkPath.storageLocation, BOOKMARK_STORAGE_FILE);
     this.treeDataProvider = new BookmarkProvider(storage);
 

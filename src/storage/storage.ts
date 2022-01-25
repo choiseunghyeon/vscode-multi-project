@@ -55,15 +55,15 @@ export abstract class Storage extends FileSystemProvider {
 }
 
 export class StoragePath {
-  constructor(private context: vscode.ExtensionContext) {}
+  constructor(private globalStoragePath: string) {}
   get storageLocation(): string {
-    const storageLocation = vscode.workspace.getConfiguration("multiProject").get<string>("storageLocation", "");
+    const storageLocation = null; // vscode.workspace.getConfiguration("multiProject").get<string>("storageLocation", "");
     let location;
     if (storageLocation) {
       const storageUri = vscode.Uri.file(storageLocation);
       location = storageUri.fsPath;
     } else {
-      location = this.context.globalStorageUri.fsPath;
+      location = this.globalStoragePath;
     }
     return location;
   }
