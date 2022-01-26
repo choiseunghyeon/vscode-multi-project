@@ -207,7 +207,7 @@ export class MultiProjectExplorer {
 
   async addProject(uri: vscode.Uri, uriList: vscode.Uri[]) {
     // console.log(args);
-    const filteredUriList = await this.treeDataProvider.filterType(uriList, vscode.FileType.File);
+    const filteredUriList = this.treeDataProvider.filterType(uriList, vscode.FileType.File);
     const filePathList = getFilePath(filteredUriList);
     const projects = filePathList.map(projectPath => ProjectStorage.createDefaultProject(projectPath));
     const resultProjects = this.treeDataProvider.projects.concat(projects);

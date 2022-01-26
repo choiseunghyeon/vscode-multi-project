@@ -96,6 +96,10 @@ export namespace fsUtils {
     return fs.writeFileSync(path, data);
   }
 
+  export function statSync(path: string): fs.Stats {
+    return fs.statSync(path);
+  }
+
   export function mkdirSync(
     path: string,
     option?: fs.MakeDirectoryOptions & {
@@ -108,12 +112,6 @@ export namespace fsUtils {
   export function readdir(path: string): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
       fs.readdir(path, (error, children) => handleResult(resolve, reject, error, normalizeNFC(children)));
-    });
-  }
-
-  export function stat(path: string): Promise<fs.Stats> {
-    return new Promise<fs.Stats>((resolve, reject) => {
-      fs.stat(path, (error, stat) => handleResult(resolve, reject, error, stat));
     });
   }
 
@@ -187,18 +185,18 @@ export abstract class FileSystemProvider implements vscode.FileSystemProvider {
     return { dispose: () => watcher.close() };
   }
 
-  stat(uri: vscode.Uri): FileStat | Thenable<FileStat> {
+  stat(uri: vscode.Uri): FileStat {
     return this._stat(uri.fsPath);
   }
 
-  async _stat(path: string): Promise<FileStat> {
-    return new FileStat(await fsUtils.stat(path));
+  _stat(path: string): FileStat {
+    return new FileStat(fsUtils.statSync(path));
   }
 
-  async filterType(uriList: vscode.Uri[], type: vscode.FileType) {
+  filterType(uriList: vscode.Uri[], type: vscode.FileType) {
     const result = [];
     for (const uri of uriList) {
-      const stat = await this.stat(uri);
+      const stat = this.stat(uri);
       if (stat.type !== type) {
         result.push(uri);
       }
