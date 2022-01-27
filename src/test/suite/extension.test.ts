@@ -1,11 +1,13 @@
 import * as expect from "expect"; // jest matchers
-import { beforeEach } from "mocha";
+import { before } from "mocha";
+import path = require("path");
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from "vscode";
+import { PROJECT_STORAGE_FILE } from "../../constants";
 import { ProjectItem } from "../../explorer/multiProjectExplorer";
 import { IProject } from "../../type";
-import { getData, initProjectStorage, setConfig } from "../helper";
+import { getData, initProjectStorage, setConfig, sleep } from "../helper";
 // import * as myExtension from '../../extension';
 
 suite("Extension Test Suite", () => {
@@ -29,22 +31,63 @@ suite("Extension Test Suite", () => {
   // });
 });
 
+const PROJECT_STORAGE_LOCATION = "c:\\multiProjectTest";
+const PROJECT_STORAGE_FULL_PATH = path.join(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FILE);
 suite("Multi Project Explorer", () => {
-  beforeEach(async () => {
-    await setConfig("projectStorageLocation", "c:\\multiProjectTest");
-    initProjectStorage("c:\\multiProjectTest", "c:\\multiProjectTest\\projects.json", "[]");
+  before(async () => {
+    await setConfig("projectStorageLocation", PROJECT_STORAGE_LOCATION);
   });
 
-  test("add project", async () => {
-    // onDidChangeFile가 비동기로 발생하여 onDidChangeFile 발생 전에 test가 처리되어 실패하게 됌
-    // {
-    //   "path": "c:\\JS_pattern_test",
-    //   "name": "JS_pattern_test"
-    // },
-    const uri = vscode.Uri.file("c:\\JS_pattern_test");
-    await vscode.commands.executeCommand("multiProjectExplorer.addProject", uri, [uri]);
+  test("add multiple project from UI", async () => {
+    const initProjectData: IProject[] = [];
+    initProjectStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
+    await sleep(10);
+    const uriList = [vscode.Uri.file("c:\\JS_pattern_test"), vscode.Uri.file("c:\\cypress-testbed"), vscode.Uri.file("c:\\cypress-testbed\\src\\App.tsx")];
 
-    const data = getData("c:\\multiProjectTest\\projects.json");
+    await vscode.commands.executeCommand("multiProjectExplorer.addProject", null, uriList);
+
+    const data = getData(PROJECT_STORAGE_FULL_PATH);
+    expect(data).toHaveLength(2);
+    expect(data).toEqual([
+      {
+        path: "c:\\JS_pattern_test",
+        name: "JS_pattern_test",
+      },
+      {
+        path: "c:\\cypress-testbed",
+        name: "cypress-testbed",
+      },
+    ]);
+    expect(data).not.toContain([
+      {
+        path: "c:\\cypress-testbed\\src\\App.tsx",
+        name: "App.tsx",
+      },
+    ]);
+  });
+
+  test("remove project from UI", async () => {
+    const initProjectData: IProject[] = [
+      {
+        path: "c:\\JS_pattern_test",
+        name: "JS_pattern_test",
+      },
+      {
+        path: "c:\\cypress-testbed",
+        name: "cypress-testbed",
+      },
+    ];
+    initProjectStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
+    await sleep(10);
+    const project: IProject = {
+      path: "c:\\cypress-testbed",
+      name: "cypress-testbed",
+    };
+    const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
+
+    await vscode.commands.executeCommand("multiProjectExplorer.removeProject", projectItem);
+
+    const data = getData(PROJECT_STORAGE_FULL_PATH);
     expect(data).toHaveLength(1);
     expect(data).toEqual([
       {
