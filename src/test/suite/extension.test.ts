@@ -1,6 +1,7 @@
 import * as expect from "expect"; // jest matchers
 import { before } from "mocha";
 import path = require("path");
+import { fn } from "jest-mock";
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from "vscode";
@@ -9,7 +10,6 @@ import { ProjectItem } from "../../explorer/multiProjectExplorer";
 import { IProject } from "../../type";
 import { getData, initProjectStorage, setConfig, sleep } from "../helper";
 // import * as myExtension from '../../extension';
-
 suite("Extension Test Suite", () => {
   vscode.window.showInformationMessage("Start all tests.");
 
@@ -33,6 +33,22 @@ suite("Extension Test Suite", () => {
 
 const PROJECT_STORAGE_LOCATION = "c:\\multiProjectTest";
 const PROJECT_STORAGE_FULL_PATH = path.join(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FILE);
+const initProjectData: IProject[] = [
+  {
+    path: "c:\\JS_pattern_test",
+    name: "JS_pattern_test",
+  },
+  {
+    path: "c:\\cypress-testbed",
+    name: "cypress-testbed",
+  },
+];
+function mockedExecuteCommand<T>(command: string, ...rest: any[]): Thenable<T | undefined> {
+  return new Promise((resolve, reject) => {
+    resolve();
+  });
+}
+
 suite("Multi Project Explorer", () => {
   before(async () => {
     await setConfig("projectStorageLocation", PROJECT_STORAGE_LOCATION);
@@ -67,16 +83,6 @@ suite("Multi Project Explorer", () => {
   });
 
   test("remove project from UI", async () => {
-    const initProjectData: IProject[] = [
-      {
-        path: "c:\\JS_pattern_test",
-        name: "JS_pattern_test",
-      },
-      {
-        path: "c:\\cypress-testbed",
-        name: "cypress-testbed",
-      },
-    ];
     initProjectStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
     await sleep(10);
     const project: IProject = {
@@ -93,6 +99,64 @@ suite("Multi Project Explorer", () => {
       {
         path: "c:\\JS_pattern_test",
         name: "JS_pattern_test",
+      },
+    ]);
+  });
+
+  test("rename project", async () => {
+    initProjectStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
+    await sleep(10);
+
+    function mockedShowInputBox(options?: vscode.InputBoxOptions, token?: vscode.CancellationToken): Thenable<string | undefined> {
+      return new Promise((resolve, reject) => {
+        resolve("renamed folder");
+      });
+    }
+    vscode.window.showInputBox = fn(mockedShowInputBox);
+
+    const project: IProject = {
+      path: "c:\\cypress-testbed",
+      name: "cypress-testbed",
+    };
+    const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
+
+    await vscode.commands.executeCommand("multiProjectExplorer.renameProject", projectItem);
+
+    const data = getData(PROJECT_STORAGE_FULL_PATH);
+    expect(data).toHaveLength(2);
+    expect(data).toEqual([
+      {
+        path: "c:\\JS_pattern_test",
+        name: "JS_pattern_test",
+      },
+      {
+        path: "c:\\cypress-testbed",
+        name: "renamed folder",
+      },
+    ]);
+  });
+
+  test("open project", async () => {
+    vscode.commands.executeCommand = fn(mockedExecuteCommand);
+
+    const project: IProject = {
+      path: "c:\\cypress-testbed",
+      name: "cypress-testbed",
+    };
+    const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
+
+    await vscode.commands.executeCommand("multiProjectExplorer.renameProject", projectItem);
+
+    const data = getData(PROJECT_STORAGE_FULL_PATH);
+    expect(data).toHaveLength(2);
+    expect(data).toEqual([
+      {
+        path: "c:\\JS_pattern_test",
+        name: "JS_pattern_test",
+      },
+      {
+        path: "c:\\cypress-testbed",
+        name: "renamed folder",
       },
     ]);
   });
