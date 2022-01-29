@@ -6,7 +6,7 @@ export async function setConfig(section: string, settings: any) {
   await multiProject.update(section, settings, vscode.ConfigurationTarget.Global);
 }
 
-export function initProjectStorage(location: string, path: string, data: any) {
+export function initStorage(location: string, path: string, data: any) {
   if (!fs.existsSync(location)) {
     fs.mkdirSync(location, { recursive: true });
   }

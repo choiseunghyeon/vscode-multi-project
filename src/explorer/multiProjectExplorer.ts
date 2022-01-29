@@ -163,7 +163,7 @@ export class MultiProjectExplorer {
   public getCommands() {
     return [
       createCommand("multiProjectExplorer.openFile", this.openFile),
-      createCommand("multiProjectExplorer.editProject", this.openProjectFile),
+      createCommand("multiProjectExplorer.editProject", this.editProjectFile),
       createCommand("multiProjectExplorer.refreshEntry", this.refresh),
       createCommand("multiProjectExplorer.openFolder", this.openFolder),
       createCommand("multiProjectExplorer.renameProject", this.renameProject),
@@ -174,7 +174,7 @@ export class MultiProjectExplorer {
     ];
   }
 
-  openProjectFile() {
+  editProjectFile() {
     openResource(this.treeDataProvider.storage._uri);
   }
 

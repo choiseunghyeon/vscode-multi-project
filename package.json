@@ -186,7 +186,12 @@
           "multiProject.projectStorageLocation": {
             "type": "string",
             "default": "",
-            "description": "project.json 경로를 지정합니다."
+            "description": "projects.json 경로를 지정합니다."
+          },
+          "multiProject.bookmarkStorageLocation": {
+            "type": "string",
+            "default": "",
+            "description": "bookmarks.json 경로를 지정합니다."
           }
         }
       }

@@ -122,12 +122,12 @@ export class BookmarkExplorer {
 
   addBookmark(thing: vscode.Uri | ProjectItem, uriList: vscode.Uri[]) {
     // console.log(args);
-    const param = ProjectItem.isProejctItem(thing) ? thing : uriList;
-    const filePathList = getFilePath(param);
+    const params = ProjectItem.isProejctItem(thing) ? [vscode.Uri.file(thing.project.path)] : uriList;
+    const filteredUriList = this.treeDataProvider.filterType(params, vscode.FileType.Directory);
+    const filePathList = getFilePath(filteredUriList);
     const bookmarks = filePathList.map(filePath => BookmarkStorage.createDefaultBookmark(filePath));
     const resultBookmarks = this.treeDataProvider.bookmarks.concat(bookmarks);
     this.treeDataProvider.updateBookmarks(resultBookmarks);
-    // vscode.workspace.getConfiguration("multiProject").update("bookmarks", resultBookmarks, vscode.ConfigurationTarget.Global);
   }
 
   removeBookmark(treeItem: BookmarkItem) {
