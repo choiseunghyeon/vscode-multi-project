@@ -28,6 +28,11 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   //   return
   // }
 
+  hasProject(targetProject: IProject) {
+    const findedProject = this.projects.find(project => project.path === targetProject.path);
+    return findedProject !== undefined;
+  }
+
   get fileName(): string {
     return vscode.workspace.getConfiguration("multiProject").get("fileName", "*");
   }
@@ -210,7 +215,8 @@ export class MultiProjectExplorer {
     const filteredUriList = this.treeDataProvider.filterType(uriList, vscode.FileType.File);
     const filePathList = getFilePath(filteredUriList);
     const projects = filePathList.map(projectPath => ProjectStorage.createDefaultProject(projectPath));
-    const resultProjects = this.treeDataProvider.projects.concat(projects);
+    const filteredProjects = projects.filter(project => !this.treeDataProvider.hasProject(project));
+    const resultProjects = this.treeDataProvider.projects.concat(filteredProjects);
     this.treeDataProvider.updateProjects(resultProjects);
   }
 
