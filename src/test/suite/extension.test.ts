@@ -1,5 +1,4 @@
 import * as expect from "expect"; // jest matchers
-import path = require("path");
 import * as vscode from "vscode";
 
 suite("Extension Test Suite", () => {

@@ -1,14 +1,13 @@
 import * as expect from "expect"; // jest matchers
-import { afterEach, before, beforeEach } from "mocha";
+import { before, beforeEach } from "mocha";
 import path = require("path");
-import { ModuleMocker } from "jest-mock";
 import * as vscode from "vscode";
 import { PROJECT_STORAGE_FILE } from "../../constants";
 import { ProjectItem } from "../../explorer/multiProjectExplorer";
 import { IProject } from "../../type";
 import { getData, initStorage, setConfig, sleep } from "../helper";
-
-const mock = new ModuleMocker(globalThis);
+import { mock, spyExecuteCommand, spyShowInputBox, spyShowQuickPick, spyShowTextDocument } from "../__mock__";
+// const mock = new ModuleMocker(globalThis);
 
 const PROJECT_STORAGE_LOCATION = "c:\\multiProjectTest";
 const PROJECT_STORAGE_FULL_PATH = path.join(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FILE);
@@ -29,7 +28,7 @@ suite("Multi Project Explorer", () => {
   });
 
   beforeEach(() => {
-    mock.restoreAllMocks();
+    mock.clearAllMocks();
   });
 
   test("add multiple project from UI", async () => {
@@ -100,7 +99,8 @@ suite("Multi Project Explorer", () => {
         resolve("renamed folder");
       });
     }
-    vscode.window.showInputBox = mock.fn(stubbedShowInputBox);
+
+    spyShowInputBox.mockImplementationOnce(stubbedShowInputBox);
 
     const project: IProject = {
       path: "c:\\cypress-testbed",
@@ -134,8 +134,7 @@ suite("Multi Project Explorer", () => {
       label: projectItem.label || "프로젝트 라벨이 없습니다.",
       projectItem,
     };
-    const mockedExecuteCommand = mock.spyOn(vscode.commands, "executeCommand");
-    const mockedShowQuickPick = mock.spyOn(vscode.window, "showQuickPick").mockImplementation(
+    spyShowQuickPick.mockImplementationOnce(
       () =>
         new Promise((resolve, reject) => {
           resolve(quickPickItem);
@@ -144,34 +143,29 @@ suite("Multi Project Explorer", () => {
 
     await vscode.commands.executeCommand("multiProjectExplorer.openProject", projectItem);
 
-    expect(mockedShowQuickPick).toBeCalledTimes(1);
-    expect(mockedExecuteCommand).toBeCalledTimes(2);
-    expect(mockedExecuteCommand).toHaveBeenLastCalledWith("vscode.openFolder", quickPickItem.projectItem.resourceUri, true);
+    expect(spyShowQuickPick).toBeCalledTimes(1);
+    expect(spyExecuteCommand).toBeCalledTimes(2);
+    expect(spyExecuteCommand).toHaveBeenLastCalledWith("vscode.openFolder", quickPickItem.projectItem.resourceUri, true);
   });
 
   test("open file", async () => {
-    const spyFn = mock.spyOn(vscode.window, "showTextDocument");
     const resource = vscode.Uri.file("c:\\cypress-testbed\\cypress.json");
 
     await vscode.commands.executeCommand("multiProjectExplorer.openFile", resource);
 
-    expect(spyFn).toHaveBeenCalledTimes(1);
-    expect(spyFn).toHaveBeenCalledWith(resource);
-    spyFn.mockReset();
+    expect(spyShowTextDocument).toHaveBeenCalledTimes(1);
+    expect(spyShowTextDocument).toHaveBeenCalledWith(resource);
   });
 
   test("edit project file", async () => {
-    const spyFn = mock.spyOn(vscode.window, "showTextDocument");
-
     await vscode.commands.executeCommand("multiProjectExplorer.editProject");
 
     const resource = vscode.Uri.file(PROJECT_STORAGE_FULL_PATH);
-    expect(spyFn).toHaveBeenCalledTimes(1);
-    expect(spyFn.mock.calls[0][0].fsPath).toEqual(resource.fsPath);
+    expect(spyShowTextDocument).toHaveBeenCalledTimes(1);
+    expect(spyShowTextDocument.mock.calls[0][0].fsPath).toEqual(resource.fsPath);
   });
 
   test("open folder", async () => {
-    const spyFn = mock.spyOn(vscode.commands, "executeCommand");
     const project: IProject = {
       path: "c:\\cypress-testbed",
       name: "cypress-testbed",
@@ -180,7 +174,7 @@ suite("Multi Project Explorer", () => {
 
     await vscode.commands.executeCommand("multiProjectExplorer.openFolder", projectItem);
 
-    expect(spyFn).toHaveBeenCalledTimes(2);
-    expect(spyFn).toHaveBeenLastCalledWith("vscode.openFolder", projectItem.resourceUri, true);
+    expect(spyExecuteCommand).toHaveBeenCalledTimes(2);
+    expect(spyExecuteCommand).toHaveBeenLastCalledWith("vscode.openFolder", projectItem.resourceUri, true);
   });
 });

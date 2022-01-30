@@ -1,15 +1,14 @@
 import * as expect from "expect"; // jest matchers
 import { before, beforeEach } from "mocha";
 import path = require("path");
-import { ModuleMocker } from "jest-mock";
 import * as vscode from "vscode";
 import { BOOKMARK_STORAGE_FILE } from "../../constants";
 import { ProjectItem } from "../../explorer/multiProjectExplorer";
 import { IBookmark, IProject } from "../../type";
 import { getData, initStorage, setConfig, sleep } from "../helper";
 import { BookmarkItem } from "../../explorer/bookmarkExplorer";
+import { mock, spyShowTextDocument } from "../__mock__";
 
-const mock = new ModuleMocker(globalThis);
 const BOOKMARK_STORAGE_LOCATION = "c:\\multiProjectTest";
 const BOOKMARK_STORAGE_FULL_PATH = path.join(BOOKMARK_STORAGE_LOCATION, BOOKMARK_STORAGE_FILE);
 const initBookmarkData: IBookmark[] = [
@@ -28,7 +27,7 @@ suite("Bookmark Explorer", () => {
   });
 
   beforeEach(() => {
-    mock.restoreAllMocks();
+    mock.clearAllMocks();
   });
 
   test("add multiple bookmark from Explorer", async () => {
@@ -103,24 +102,19 @@ suite("Bookmark Explorer", () => {
   });
 
   test("open file", async () => {
-    const spyFn = mock.spyOn(vscode.window, "showTextDocument");
     const resource = vscode.Uri.file("c:\\cypress-testbed\\cypress.json");
 
     await vscode.commands.executeCommand("bookmarkExplorer.openFile", resource);
 
-    expect(spyFn).toHaveBeenCalledTimes(1);
-    expect(spyFn).toHaveBeenCalledWith(resource);
+    expect(spyShowTextDocument).toHaveBeenCalledTimes(1);
+    expect(spyShowTextDocument).toHaveBeenCalledWith(resource);
   });
 
   test("edit bookmarks.json file", async () => {
-    const spyFn = mock.spyOn(vscode.window, "showTextDocument");
-
     await vscode.commands.executeCommand("bookmarkExplorer.editBookmark");
 
     const resource = vscode.Uri.file(BOOKMARK_STORAGE_FULL_PATH);
-    expect(spyFn).toHaveBeenCalledTimes(1);
-    expect(spyFn.mock.calls[0][0].fsPath).toEqual(resource.fsPath);
-
-    spyFn.mockReset();
+    expect(spyShowTextDocument).toHaveBeenCalledTimes(1);
+    expect(spyShowTextDocument.mock.calls[0][0].fsPath).toEqual(resource.fsPath);
   });
 });
