@@ -20,6 +20,7 @@ const registerCommand = (thisArg: any, command: IRegisterCommand) => {
   });
 };
 
+export let publicInstance: any;
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -28,6 +29,8 @@ export function activate(context: vscode.ExtensionContext) {
   const units = [];
   units.push(multiProjectExplorer, bookmarkExplorer);
   addSubscriptions(context, units);
+
+  publicInstance = units;
 }
 
 // this method is called when your extension is deactivated

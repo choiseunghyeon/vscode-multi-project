@@ -1,14 +1,13 @@
 import * as expect from "expect"; // jest matchers
+import { spyOn } from "jest-mock";
 import { after, before, beforeEach } from "mocha";
 import path = require("path");
 import * as vscode from "vscode";
 import { PROJECT_STORAGE_FILE } from "../../constants";
-import { MultiProjectProvider, ProjectItem } from "../../explorer/multiProjectExplorer";
-import { ProjectStorage } from "../../storage/projectStorage";
-import { ProjectStoragePath } from "../../storage/storage";
+import { ProjectItem } from "../../explorer/multiProjectExplorer";
 import { IProject } from "../../type";
-import { getData, initStorage, restoreConfig, saveConfig, setConfig, sleep } from "../helper";
-import { mock, spyCreateTerminal, spyExecuteCommand, spyShowInputBox, spyShowQuickPick, spyShowTextDocument } from "../__mock__";
+import { getData, getMultiProjectProvider, initStorage, restoreConfig, saveConfig, setConfig, sleep } from "../helper";
+import { mock, mockedOpenVSCode, spyCreateTerminal, spyExecuteCommand, spyShowInputBox, spyShowQuickPick, spyShowTextDocument } from "../__mock__";
 // const mock = new ModuleMocker(globalThis);
 
 const PROJECT_STORAGE_LOCATION = "c:\\multiProjectTest";
@@ -155,8 +154,8 @@ suite("Multi Project Explorer", () => {
     await vscode.commands.executeCommand("multiProjectExplorer.openProject", projectItem);
 
     expect(spyShowQuickPick).toBeCalledTimes(1);
-    expect(spyExecuteCommand).toBeCalledTimes(2);
-    expect(spyExecuteCommand).toHaveBeenLastCalledWith("vscode.openFolder", quickPickItem.projectItem.resourceUri, true);
+    expect(spyExecuteCommand).toBeCalledTimes(1);
+    expect(mockedOpenVSCode).toHaveBeenCalledWith(quickPickItem.projectItem.resourceUri, true);
   });
 
   test("open file", async () => {
@@ -185,8 +184,8 @@ suite("Multi Project Explorer", () => {
 
     await vscode.commands.executeCommand("multiProjectExplorer.openFolder", projectItem);
 
-    expect(spyExecuteCommand).toHaveBeenCalledTimes(2);
-    expect(spyExecuteCommand).toHaveBeenLastCalledWith("vscode.openFolder", projectItem.resourceUri, true);
+    expect(spyExecuteCommand).toHaveBeenCalledTimes(1);
+    expect(mockedOpenVSCode).toHaveBeenCalledWith(projectItem.resourceUri, true);
   });
   test("open terminal", async () => {
     // Terminal 없는 경우
@@ -221,14 +220,12 @@ suite("Multi Project Explorer", () => {
   });
 });
 
-suite.only("Multi Project Provider", () => {
+suite("Multi Project Provider", () => {
   test("get children at first load", async () => {
     initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
     await sleep(10);
 
-    const projectPath = new ProjectStoragePath("");
-    const storage = new ProjectStorage(projectPath.storageLocation, PROJECT_STORAGE_FILE);
-    const treeDataProvider = new MultiProjectProvider(storage);
+    const treeDataProvider = getMultiProjectProvider();
     const expectedProjectItems = initProjectData.map(project => new ProjectItem(project, vscode.FileType.Unknown));
 
     const projectItems = await treeDataProvider.getChildren();
@@ -237,10 +234,11 @@ suite.only("Multi Project Provider", () => {
   });
 
   test("get children from project item", async () => {
+    // node_moduels 제외, git 포함된 목록 리턴
     await setConfig("ignoredFolders", ["node_modules"]);
-    const projectPath = new ProjectStoragePath("");
-    const storage = new ProjectStorage(projectPath.storageLocation, PROJECT_STORAGE_FILE);
-    const treeDataProvider = new MultiProjectProvider(storage);
+    await setConfig("fileName", "git");
+
+    const treeDataProvider = getMultiProjectProvider();
     const project = {
       path: "c:\\testFolder",
       name: "testFolder",
@@ -252,8 +250,8 @@ suite.only("Multi Project Provider", () => {
     const expectedProjectItems = [
       new ProjectItem(
         {
-          path: "c:\\testFolder\\App.tsx",
-          name: "App.tsx",
+          path: "c:\\testFolder\\.gitignore",
+          name: ".gitignore",
         },
         vscode.FileType.File
       ),
@@ -275,5 +273,38 @@ suite.only("Multi Project Provider", () => {
         vscode.FileType.Directory
       )
     );
+    expect(projectItems).not.toContain(
+      new ProjectItem(
+        {
+          path: "c:\\testFolder\\App.tsx",
+          name: "App.tsx",
+        },
+        vscode.FileType.File
+      )
+    );
+  });
+
+  test("sync and refresh when projects.json changes", async () => {
+    initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, []);
+    await sleep(50);
+    const treeDataProvider = getMultiProjectProvider();
+    const spyTreeDataProviderRefresh = spyOn(treeDataProvider, "refresh");
+
+    initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, [
+      {
+        path: "c:\\testFolder\\src",
+        name: "src",
+      },
+    ]);
+    await sleep(50);
+
+    expect(treeDataProvider.projects).toEqual([
+      {
+        path: "c:\\testFolder\\src",
+        name: "src",
+      },
+    ]);
+    expect(spyTreeDataProviderRefresh).toHaveBeenCalled();
+    spyTreeDataProviderRefresh.mockRestore();
   });
 });

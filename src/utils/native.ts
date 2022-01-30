@@ -11,3 +11,7 @@ export function getConfigurationFileName(): string {
 export function getConfigurationIgnoredFolders(): string[] {
   return vscode.workspace.getConfiguration("multiProject").get("ignoredFolders", []);
 }
+
+export async function openVSCode(uri: vscode.Uri, openInNewWindow: boolean) {
+  await vscode.commands.executeCommand("vscode.openFolder", uri, openInNewWindow);
+}

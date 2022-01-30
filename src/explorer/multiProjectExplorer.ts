@@ -7,7 +7,7 @@ import { showInputBox } from "../quickPick";
 import { PROJECT_STORAGE_FILE } from "../constants";
 import { ProjectStorage } from "../storage/projectStorage";
 import { ProjectStoragePath } from "../storage/storage";
-import { getConfigurationFileName, getConfigurationIgnoredFolders, openResource } from "../utils/native";
+import { getConfigurationFileName, getConfigurationIgnoredFolders, openResource, openVSCode } from "../utils/native";
 
 export class MultiProjectProvider extends FileSystemProvider implements vscode.TreeDataProvider<ProjectItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<ProjectItem | undefined | void> = new vscode.EventEmitter<ProjectItem | undefined | void>();
@@ -89,9 +89,9 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
         return true;
       } else if (name.includes(this.fileName)) {
         return true;
+      } else {
+        return false;
       }
-
-      return true;
     }
   }
 }
@@ -187,8 +187,11 @@ export class MultiProjectExplorer {
 
   async openFolder(treeItem: ProjectItem) {
     const uri = treeItem.resourceUri;
+    if (!uri) {
+      return;
+    }
     const openInNewWindow = true;
-    await vscode.commands.executeCommand("vscode.openFolder", uri, openInNewWindow);
+    await openVSCode(uri, openInNewWindow);
   }
 
   async renameProject(treeItem: ProjectItem) {
@@ -234,8 +237,8 @@ export class MultiProjectExplorer {
     if (!selectedQuickPickItem) {
       return;
     }
-    const openInNewWindow = true;
-    await vscode.commands.executeCommand("vscode.openFolder", selectedQuickPickItem.projectItem.resourceUri, openInNewWindow);
+
+    this.openFolder(selectedQuickPickItem.projectItem);
   }
 
   private getProjectTerminal(label: string) {
