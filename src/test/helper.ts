@@ -69,3 +69,8 @@ export function getMultiProjectProvider() {
   const [multiProjectExplorer, bookmarkExplorer] = publicInstance;
   return multiProjectExplorer.treeDataProvider;
 }
+
+export function getBookmarkProvider() {
+  const [multiProjectExplorer, bookmarkExplorer] = publicInstance;
+  return bookmarkExplorer.treeDataProvider;
+}

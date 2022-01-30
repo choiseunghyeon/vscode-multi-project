@@ -16,10 +16,6 @@ export abstract class Storage extends FileSystemProvider {
     return _.cloneDeep(this._uri);
   }
 
-  set data(arg: any) {
-    this._data = arg;
-  }
-
   get data() {
     return _.cloneDeep(this._data);
   }

@@ -5,9 +5,10 @@ import * as vscode from "vscode";
 import { BOOKMARK_STORAGE_FILE } from "../../constants";
 import { ProjectItem } from "../../explorer/multiProjectExplorer";
 import { IBookmark, IProject } from "../../type";
-import { getData, initStorage, setConfig, sleep } from "../helper";
+import { getBookmarkProvider, getData, initStorage, setConfig, sleep } from "../helper";
 import { BookmarkItem } from "../../explorer/bookmarkExplorer";
 import { mock, spyShowTextDocument } from "../__mock__";
+import { spyOn } from "jest-mock";
 
 const BOOKMARK_STORAGE_LOCATION = "c:\\multiProjectTest";
 const BOOKMARK_STORAGE_FULL_PATH = path.join(BOOKMARK_STORAGE_LOCATION, BOOKMARK_STORAGE_FILE);
@@ -116,5 +117,39 @@ suite("Bookmark Explorer", () => {
     const resource = vscode.Uri.file(BOOKMARK_STORAGE_FULL_PATH);
     expect(spyShowTextDocument).toHaveBeenCalledTimes(1);
     expect(spyShowTextDocument.mock.calls[0][0].fsPath).toEqual(resource.fsPath);
+  });
+});
+
+suite("Bookmark Provider", () => {
+  test("get children at first load", async () => {
+    initStorage(BOOKMARK_STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
+    await sleep(10);
+
+    const treeDataProvider = getBookmarkProvider();
+    const expectedBookmarkItems = initBookmarkData.map(bookmark => new BookmarkItem(bookmark, vscode.FileType.File));
+
+    const bookmarkItems = await treeDataProvider.getChildren();
+
+    expect(expectedBookmarkItems).toEqual(bookmarkItems);
+  });
+
+  test("sync and refresh when projects.json changes", async () => {
+    initStorage(BOOKMARK_STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, []);
+    await sleep(50);
+    const treeDataProvider = getBookmarkProvider();
+    const spyTreeDataProviderRefresh = spyOn(treeDataProvider, "refresh");
+
+    const initBookmarkData = [
+      {
+        path: "c:\\cypress-testbed\\cypress.json",
+        name: "cypress.json",
+      },
+    ];
+    initStorage(BOOKMARK_STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
+    await sleep(50);
+
+    expect(treeDataProvider.bookmarks).toEqual(initBookmarkData);
+    expect(spyTreeDataProviderRefresh).toHaveBeenCalled();
+    spyTreeDataProviderRefresh.mockRestore();
   });
 });

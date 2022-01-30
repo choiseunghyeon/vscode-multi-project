@@ -36,13 +36,8 @@ export class BookmarkProvider extends FileSystemProvider implements vscode.TreeD
   }
 
   // tree data provider
-  async getChildren(element?: BookmarkItem): Promise<BookmarkItem[]> {
-    if (element) {
-      const elementUri = vscode.Uri.file(element.bookmark.path);
-      const children = await this.readDirectory(elementUri);
-      return this.filterChildren(children, elementUri.fsPath);
-    }
-
+  async getChildren(): Promise<BookmarkItem[]> {
+    // 모든 bookmarkItem은 vscode.TreeItemCollapsibleState.None 이므로 element가 넘어오는 경우 없음
     // 첫 로드
     if (this.bookmarks.length > 0) {
       return this.bookmarks.map(bookmark => new BookmarkItem(bookmark, vscode.FileType.File));
