@@ -1,6 +1,33 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 
+export function getConfigurationFileName(): Function {
+  const result = vscode.workspace.getConfiguration("multiProject").get("fileName", "*");
+  function restore() {
+    setConfig("fileName", result);
+  }
+
+  return restore;
+}
+
+export function getConfigurationIgnoredFolders(): Function {
+  const result = vscode.workspace.getConfiguration("multiProject").get("ignoredFolders", []);
+  function restore() {
+    setConfig("ignoredFolders", result);
+  }
+
+  return restore;
+}
+
+const restoreConfigList: Function[] = [];
+export function saveConfig() {
+  restoreConfigList.push(getConfigurationFileName(), getConfigurationIgnoredFolders());
+}
+
+export async function restoreConfig() {
+  restoreConfigList.forEach(restore => restore());
+}
+
 export async function setConfig(section: string, settings: any) {
   const multiProject = vscode.workspace.getConfiguration("multiProject");
   await multiProject.update(section, settings, vscode.ConfigurationTarget.Global);

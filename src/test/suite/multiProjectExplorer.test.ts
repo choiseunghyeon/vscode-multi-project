@@ -1,12 +1,14 @@
 import * as expect from "expect"; // jest matchers
-import { before, beforeEach } from "mocha";
+import { after, before, beforeEach } from "mocha";
 import path = require("path");
 import * as vscode from "vscode";
 import { PROJECT_STORAGE_FILE } from "../../constants";
-import { ProjectItem } from "../../explorer/multiProjectExplorer";
+import { MultiProjectProvider, ProjectItem } from "../../explorer/multiProjectExplorer";
+import { ProjectStorage } from "../../storage/projectStorage";
+import { ProjectStoragePath } from "../../storage/storage";
 import { IProject } from "../../type";
-import { getData, initStorage, setConfig, sleep } from "../helper";
-import { mock, spyExecuteCommand, spyShowInputBox, spyShowQuickPick, spyShowTextDocument } from "../__mock__";
+import { getData, initStorage, restoreConfig, saveConfig, setConfig, sleep } from "../helper";
+import { mock, spyCreateTerminal, spyExecuteCommand, spyShowInputBox, spyShowQuickPick, spyShowTextDocument } from "../__mock__";
 // const mock = new ModuleMocker(globalThis);
 
 const PROJECT_STORAGE_LOCATION = "c:\\multiProjectTest";
@@ -21,6 +23,15 @@ const initProjectData: IProject[] = [
     name: "cypress-testbed",
   },
 ];
+
+before(() => {
+  saveConfig();
+});
+
+after(() => {
+  // 기존 config 작업 복원
+  restoreConfig();
+});
 
 suite("Multi Project Explorer", () => {
   before(async () => {
@@ -176,5 +187,93 @@ suite("Multi Project Explorer", () => {
 
     expect(spyExecuteCommand).toHaveBeenCalledTimes(2);
     expect(spyExecuteCommand).toHaveBeenLastCalledWith("vscode.openFolder", projectItem.resourceUri, true);
+  });
+  test("open terminal", async () => {
+    // Terminal 없는 경우
+    // Terminal 없는 경우 show, sendText 호출되는지 확인할 수 없는 테스트 코드임.. @TODO
+    const project: IProject = {
+      path: "c:\\cypress-testbed",
+      name: "TestBed",
+    };
+    const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
+
+    await vscode.commands.executeCommand("multiProjectExplorer.openTerminal", projectItem);
+
+    expect(spyCreateTerminal).toHaveBeenCalledTimes(1);
+    expect(spyCreateTerminal).toHaveBeenCalledWith(projectItem.label);
+
+    // Terminal 있는 경우
+    const targetTerminal = vscode.window.terminals.find(terminal => terminal.name === projectItem.label);
+
+    if (!targetTerminal) {
+      expect(targetTerminal).not.toBeUndefined();
+      return;
+    }
+
+    mock.spyOn(targetTerminal, "show");
+    mock.spyOn(targetTerminal, "sendText");
+
+    await vscode.commands.executeCommand("multiProjectExplorer.openTerminal", projectItem);
+
+    expect(targetTerminal.name).toBe(projectItem.label);
+    expect(targetTerminal.show).toHaveBeenCalled();
+    expect(targetTerminal.sendText).toHaveBeenCalledWith(`cd ${projectItem.project.path}`);
+  });
+});
+
+suite.only("Multi Project Provider", () => {
+  test("get children at first load", async () => {
+    initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
+    await sleep(10);
+
+    const projectPath = new ProjectStoragePath("");
+    const storage = new ProjectStorage(projectPath.storageLocation, PROJECT_STORAGE_FILE);
+    const treeDataProvider = new MultiProjectProvider(storage);
+    const expectedProjectItems = initProjectData.map(project => new ProjectItem(project, vscode.FileType.Unknown));
+
+    const projectItems = await treeDataProvider.getChildren();
+
+    expect(expectedProjectItems).toEqual(projectItems);
+  });
+
+  test("get children from project item", async () => {
+    await setConfig("ignoredFolders", ["node_modules"]);
+    const projectPath = new ProjectStoragePath("");
+    const storage = new ProjectStorage(projectPath.storageLocation, PROJECT_STORAGE_FILE);
+    const treeDataProvider = new MultiProjectProvider(storage);
+    const project = {
+      path: "c:\\testFolder",
+      name: "testFolder",
+    };
+    const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
+
+    const projectItems = await treeDataProvider.getChildren(projectItem);
+
+    const expectedProjectItems = [
+      new ProjectItem(
+        {
+          path: "c:\\testFolder\\App.tsx",
+          name: "App.tsx",
+        },
+        vscode.FileType.File
+      ),
+      new ProjectItem(
+        {
+          path: "c:\\testFolder\\src",
+          name: "src",
+        },
+        vscode.FileType.Directory
+      ),
+    ];
+    expect(expectedProjectItems).toEqual(projectItems);
+    expect(projectItems).not.toContain(
+      new ProjectItem(
+        {
+          path: "c:\\testFolder\\node_modules",
+          name: "node_modules",
+        },
+        vscode.FileType.Directory
+      )
+    );
   });
 });

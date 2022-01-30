@@ -54,17 +54,37 @@ export abstract class Storage extends FileSystemProvider {
   }
 }
 
-export class StoragePath {
-  constructor(private globalStoragePath: string) {}
+abstract class StoragePath {
+  constructor(protected globalStoragePath: string) {}
   get storageLocation(): string {
-    const storageLocation = vscode.workspace.getConfiguration("multiProject").get<string>("projectStorageLocation", "");
     let location;
-    if (storageLocation) {
-      const storageUri = vscode.Uri.file(storageLocation);
+    if (this.storageLocationFromConfig) {
+      const storageUri = vscode.Uri.file(this.storageLocationFromConfig);
       location = storageUri.fsPath;
     } else {
       location = this.globalStoragePath;
     }
     return location;
+  }
+
+  abstract get storageLocationFromConfig(): string;
+}
+
+export class ProjectStoragePath extends StoragePath {
+  constructor(protected globalStoragePath: string) {
+    super(globalStoragePath);
+  }
+
+  get storageLocationFromConfig(): string {
+    return vscode.workspace.getConfiguration("multiProject").get<string>("projectStorageLocation", "");
+  }
+}
+export class BookmarkStoragePath extends StoragePath {
+  constructor(protected globalStoragePath: string) {
+    super(globalStoragePath);
+  }
+
+  get storageLocationFromConfig(): string {
+    return vscode.workspace.getConfiguration("multiProject").get<string>("bookmarkStorageLocation", "");
   }
 }

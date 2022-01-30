@@ -6,7 +6,7 @@ import { BOOKMARK_STORAGE_FILE } from "../constants";
 import { IBookmark } from "../type";
 import { ProjectItem } from "./multiProjectExplorer";
 import { BookmarkStorage } from "../storage/bookmarkStorage";
-import { StoragePath } from "../storage/storage";
+import { BookmarkStoragePath } from "../storage/storage";
 import { openResource } from "../utils/native";
 
 export class BookmarkProvider extends FileSystemProvider implements vscode.TreeDataProvider<BookmarkItem> {
@@ -88,7 +88,7 @@ export class BookmarkItem extends vscode.TreeItem {
 export class BookmarkExplorer {
   treeDataProvider: BookmarkProvider;
   constructor(globalStoragePath: string) {
-    const bookmarkPath = new StoragePath(globalStoragePath);
+    const bookmarkPath = new BookmarkStoragePath(globalStoragePath);
     const storage = new BookmarkStorage(bookmarkPath.storageLocation, BOOKMARK_STORAGE_FILE);
     this.treeDataProvider = new BookmarkProvider(storage);
 

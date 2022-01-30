@@ -2,12 +2,12 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { createCommand, getFilePath } from "../utils/utils";
 import { FileSystemProvider } from "../FileSystemProvider";
-import { IProject, IRegisterCommand } from "../type";
+import { IProject } from "../type";
 import { showInputBox } from "../quickPick";
 import { PROJECT_STORAGE_FILE } from "../constants";
 import { ProjectStorage } from "../storage/projectStorage";
-import { StoragePath } from "../storage/storage";
-import { openResource } from "../utils/native";
+import { ProjectStoragePath } from "../storage/storage";
+import { getConfigurationFileName, getConfigurationIgnoredFolders, openResource } from "../utils/native";
 
 export class MultiProjectProvider extends FileSystemProvider implements vscode.TreeDataProvider<ProjectItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<ProjectItem | undefined | void> = new vscode.EventEmitter<ProjectItem | undefined | void>();
@@ -22,19 +22,13 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     });
   }
 
-  // get storageLocation(): string {
-  //   vscode.workspace.getConfiguration("multiProject").get<string>("storageLocation", "");
-
-  //   return
-  // }
-
   hasProject(targetProject: IProject) {
     const findedProject = this.projects.find(project => project.path === targetProject.path);
     return findedProject !== undefined;
   }
 
   get fileName(): string {
-    return vscode.workspace.getConfiguration("multiProject").get("fileName", "*");
+    return getConfigurationFileName();
   }
 
   get projects(): IProject[] {
@@ -46,7 +40,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   }
 
   get ignoredFolders(): string[] {
-    return vscode.workspace.getConfiguration("multiProject").get("ignoredFolders", []);
+    return getConfigurationIgnoredFolders();
   }
 
   public refresh(): void {
@@ -146,7 +140,7 @@ export class ProjectItem extends vscode.TreeItem {
 export class MultiProjectExplorer {
   treeDataProvider: MultiProjectProvider;
   constructor(globalStoragePath: string) {
-    const projectPath = new StoragePath(globalStoragePath);
+    const projectPath = new ProjectStoragePath(globalStoragePath);
     const storage = new ProjectStorage(projectPath.storageLocation, PROJECT_STORAGE_FILE);
     this.treeDataProvider = new MultiProjectProvider(storage);
 
@@ -167,15 +161,15 @@ export class MultiProjectExplorer {
 
   public getCommands() {
     return [
-      createCommand("multiProjectExplorer.openFile", this.openFile),
-      createCommand("multiProjectExplorer.editProject", this.editProjectFile),
-      createCommand("multiProjectExplorer.refreshEntry", this.refresh),
-      createCommand("multiProjectExplorer.openFolder", this.openFolder),
-      createCommand("multiProjectExplorer.renameProject", this.renameProject),
       createCommand("multiProjectExplorer.addProject", this.addProject),
       createCommand("multiProjectExplorer.removeProject", this.removeProject),
-      createCommand("multiProjectExplorer.openTerminal", this.openTerminal),
+      createCommand("multiProjectExplorer.renameProject", this.renameProject),
       createCommand("multiProjectExplorer.openProject", this.openProject),
+      createCommand("multiProjectExplorer.openFile", this.openFile),
+      createCommand("multiProjectExplorer.editProject", this.editProjectFile),
+      createCommand("multiProjectExplorer.openFolder", this.openFolder),
+      createCommand("multiProjectExplorer.refreshEntry", this.refresh),
+      createCommand("multiProjectExplorer.openTerminal", this.openTerminal),
     ];
   }
 
@@ -228,13 +222,10 @@ export class MultiProjectExplorer {
   }
 
   openTerminal(treeItem: ProjectItem) {
-    const filePathList = getFilePath(treeItem);
-    filePathList.forEach(filePath => {
-      const terminal = this.getProjectTerminal(filePath);
-      terminal.show();
-      // 한글 지원 안됌 한글의 경우 ''로 감싸면 가능
-      terminal.sendText(`cd ${filePath}`);
-    });
+    const terminal = this.getProjectTerminal(treeItem.label || "No Label");
+    terminal.show();
+    // 한글 지원 안됌 한글의 경우 ''로 감싸면 가능
+    terminal.sendText(`cd ${treeItem.project.path}`);
   }
 
   async openProject() {
@@ -247,14 +238,12 @@ export class MultiProjectExplorer {
     await vscode.commands.executeCommand("vscode.openFolder", selectedQuickPickItem.projectItem.resourceUri, openInNewWindow);
   }
 
-  private getProjectTerminal(filePath: string) {
-    const { name } = path.parse(filePath);
-
-    const terminal = vscode.window.terminals.find(terminal => terminal.name === name);
+  private getProjectTerminal(label: string) {
+    const terminal = vscode.window.terminals.find(terminal => terminal.name === label);
     if (terminal) {
       return terminal;
     } else {
-      return vscode.window.createTerminal(`${name}`);
+      return vscode.window.createTerminal(label);
     }
   }
 
