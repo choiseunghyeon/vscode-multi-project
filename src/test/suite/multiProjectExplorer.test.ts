@@ -5,7 +5,7 @@ import path = require("path");
 import * as vscode from "vscode";
 import { PROJECT_STORAGE_FILE } from "../../constants";
 import { ProjectItem } from "../../explorer/multiProjectExplorer";
-import { IProject } from "../../type";
+import { ContextValueType, IProject } from "../../type";
 import { getData, getMultiProjectProvider, initStorage, restoreConfig, saveConfig, setConfig, sleep } from "../helper";
 import { mock, mockedOpenVSCode, spyCreateTerminal, spyExecuteCommand, spyShowInputBox, spyShowQuickPick, spyShowTextDocument } from "../__mock__";
 // const mock = new ModuleMocker(globalThis);
@@ -221,6 +221,43 @@ suite("Multi Project Explorer", () => {
 });
 
 suite("Multi Project Provider", () => {
+  test("project item with directory", () => {
+    const project = {
+      path: "c:\\testFolder",
+      name: "testFolder",
+    };
+    // const file = {
+    //   path: "c:\\cypress-testbed\\cypress.json",
+    //   name: "cypress.json"
+    // }
+
+    const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
+
+    expect(projectItem.label).toBe(project.name);
+    expect(projectItem.collapsibleState).toBe(vscode.TreeItemCollapsibleState.Collapsed);
+    expect(projectItem.resourceUri).toEqual(vscode.Uri.file(project.path));
+    expect(projectItem.contextValue).toBe(ContextValueType.Project);
+    expect(projectItem.iconPath).toEqual(new vscode.ThemeIcon("root-folder"));
+    expect(projectItem.type).toBe(vscode.FileType.Unknown);
+  });
+
+  test("project item with file", () => {
+    const projectFile = {
+      path: "c:\\cypress-testbed\\cypress.json",
+      name: "cypress.json",
+    };
+
+    const projectItem = new ProjectItem(projectFile, vscode.FileType.File);
+
+    expect(projectItem.label).toBe(projectFile.name);
+    expect(projectItem.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
+    expect(projectItem.resourceUri).toEqual(vscode.Uri.file(projectFile.path));
+    expect(projectItem.contextValue).toBe(ContextValueType.File);
+    expect(projectItem.iconPath).toBeUndefined();
+    expect(projectItem.type).toBe(vscode.FileType.File);
+    expect(projectItem.command).toEqual({ command: "multiProjectExplorer.openFile", title: "Open File", arguments: [projectItem.resourceUri] });
+  });
+
   test("get children at first load", async () => {
     initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
     await sleep(10);

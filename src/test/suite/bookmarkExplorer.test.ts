@@ -4,7 +4,7 @@ import path = require("path");
 import * as vscode from "vscode";
 import { BOOKMARK_STORAGE_FILE } from "../../constants";
 import { ProjectItem } from "../../explorer/multiProjectExplorer";
-import { IBookmark, IProject } from "../../type";
+import { ContextValueType, IBookmark, IProject } from "../../type";
 import { getBookmarkProvider, getData, initStorage, setConfig, sleep } from "../helper";
 import { BookmarkItem } from "../../explorer/bookmarkExplorer";
 import { mock, spyShowTextDocument } from "../__mock__";
@@ -121,6 +121,22 @@ suite("Bookmark Explorer", () => {
 });
 
 suite("Bookmark Provider", () => {
+  test("bookmark item with file", () => {
+    const bookmark = {
+      path: "c:\\cypress-testbed\\cypress.json",
+      name: "cypress.json",
+    };
+
+    const bookmarkItem = new BookmarkItem(bookmark, vscode.FileType.File);
+
+    expect(bookmarkItem.label).toBe(bookmark.name);
+    expect(bookmarkItem.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
+    expect(bookmarkItem.iconPath).toEqual(new vscode.ThemeIcon("extensions-star-full"));
+    expect(bookmarkItem.contextValue).toBe(ContextValueType.File);
+    expect(bookmarkItem.type).toBe(vscode.FileType.File);
+    expect(bookmarkItem.command).toEqual({ command: "multiProjectExplorer.openFile", title: "Open File", arguments: [vscode.Uri.file(bookmark.path)] });
+  });
+
   test("get children at first load", async () => {
     initStorage(BOOKMARK_STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
     await sleep(10);

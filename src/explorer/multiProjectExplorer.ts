@@ -1,13 +1,12 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { createCommand, getFilePath } from "../utils/utils";
+import { createCommand, createTreeItemCommand, getFilePath } from "../utils/utils";
 import { FileSystemProvider } from "../FileSystemProvider";
-import { IProject } from "../type";
-import { showInputBox } from "../quickPick";
+import { ContextValueType, IProject } from "../type";
 import { PROJECT_STORAGE_FILE } from "../constants";
 import { ProjectStorage } from "../storage/projectStorage";
 import { ProjectStoragePath } from "../storage/storage";
-import { getConfigurationFileName, getConfigurationIgnoredFolders, openResource, openVSCode } from "../utils/native";
+import { getConfigurationFileName, getConfigurationIgnoredFolders, openResource, openVSCode, showInputBox } from "../utils/native";
 
 export class MultiProjectProvider extends FileSystemProvider implements vscode.TreeDataProvider<ProjectItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<ProjectItem | undefined | void> = new vscode.EventEmitter<ProjectItem | undefined | void>();
@@ -98,32 +97,31 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
 
 export class ProjectItem extends vscode.TreeItem {
   label: string | undefined;
+  contextValue?: ContextValueType;
   constructor(public project: IProject, public readonly type: vscode.FileType) {
     super(project.name, type === vscode.FileType.File ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
     this.resourceUri = vscode.Uri.file(project.path);
     if (this.type === vscode.FileType.Unknown) {
-      this.label = project.name;
       this.iconPath = new vscode.ThemeIcon("root-folder");
     }
 
-    this.setContextValue();
-
     if (type === vscode.FileType.File) {
-      this.command = { command: "multiProjectExplorer.openFile", title: "Open File", arguments: [this.resourceUri] };
-      this.contextValue = "file";
+      this.command = createTreeItemCommand("multiProjectExplorer.openFile", "Open File", [this.resourceUri]);
     }
+
+    this.setContextValue();
   }
 
   setContextValue() {
     switch (this.type) {
       case vscode.FileType.Unknown:
-        this.contextValue = "project";
+        this.contextValue = ContextValueType.Project;
         break;
       case vscode.FileType.File:
-        this.contextValue = "file";
+        this.contextValue = ContextValueType.File;
         break;
       default:
-        this.contextValue = "default";
+        this.contextValue = ContextValueType.Default;
         break;
     }
   }

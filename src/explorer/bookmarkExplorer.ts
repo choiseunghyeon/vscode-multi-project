@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { createCommand, getFilePath } from "../utils/utils";
+import { createCommand, createTreeItemCommand, getFilePath } from "../utils/utils";
 import { FileSystemProvider } from "../FileSystemProvider";
 import { BOOKMARK_STORAGE_FILE } from "../constants";
 import { IBookmark } from "../type";
@@ -67,7 +67,7 @@ export class BookmarkItem extends vscode.TreeItem {
     this.label = bookmark.name;
     this.iconPath = new vscode.ThemeIcon("extensions-star-full");
 
-    this.command = { command: "multiProjectExplorer.openFile", title: "Open File", arguments: [vscode.Uri.file(bookmark.path)] };
+    this.command = createTreeItemCommand("multiProjectExplorer.openFile", "Open File", [vscode.Uri.file(bookmark.path)]);
     this.contextValue = "file";
   }
 

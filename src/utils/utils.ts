@@ -33,3 +33,11 @@ export function getFilePathFromBookmarkItem(bookmarkItem: BookmarkItem): string[
 export function createCommand(name: string, callback: Function): IRegisterCommand {
   return { name, callback };
 }
+
+export function createTreeItemCommand(command: string, title: string, args: any[]): vscode.Command {
+  return {
+    command,
+    title,
+    arguments: args,
+  };
+}

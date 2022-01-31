@@ -12,3 +12,9 @@ export interface IRegisterCommand {
   name: string;
   callback: Function;
 }
+
+export const enum ContextValueType {
+  Project = "project",
+  File = "file",
+  Default = "default",
+}
