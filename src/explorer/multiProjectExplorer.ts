@@ -51,7 +51,8 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     if (element) {
       const elementUri = vscode.Uri.file(element.project.path);
       const children = await this.readDirectory(elementUri);
-      return this.filterChildren(children, elementUri.fsPath);
+      const filteredChildren = this.filterChildren(children, elementUri.fsPath);
+      return this.sortChildren(filteredChildren);
     }
 
     // 첫 로드
@@ -63,6 +64,21 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
 
   getTreeItem(element: ProjectItem): ProjectItem {
     return element;
+  }
+
+  private sortChildren(treeItems: ProjectItem[]): ProjectItem[] {
+    const directory: ProjectItem[] = [];
+    const files: ProjectItem[] = [];
+
+    treeItems.forEach((treeItem: ProjectItem) => {
+      if (treeItem.type === vscode.FileType.File) {
+        files.push(treeItem);
+      } else {
+        directory.push(treeItem);
+      }
+    });
+
+    return directory.concat(files);
   }
 
   private filterChildren(children: [string, vscode.FileType][], filepath: string) {

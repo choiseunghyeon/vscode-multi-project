@@ -5,6 +5,7 @@ import { ProjectStorage } from "../storage/projectStorage";
 import { PROJECT_STORAGE_FILE } from "../constants";
 import { MultiProjectProvider } from "../explorer/multiProjectExplorer";
 import { publicInstance } from "../extension";
+import path = require("path");
 
 /* Configuration */
 export function getConfigurationFileName(): Function {
@@ -25,13 +26,16 @@ export function getConfigurationIgnoredFolders(): Function {
   return restore;
 }
 
-const restoreConfigList: Function[] = [];
+let restoreConfigList: Function[] = [];
 export function saveConfig() {
   restoreConfigList.push(getConfigurationFileName(), getConfigurationIgnoredFolders());
 }
 
 export async function restoreConfig() {
-  restoreConfigList.forEach(restore => restore());
+  for (const restore of restoreConfigList) {
+    await restore();
+  }
+  restoreConfigList = [];
 }
 
 export async function setConfig(section: string, settings: any) {
@@ -74,3 +78,6 @@ export function getBookmarkProvider() {
   const [multiProjectExplorer, bookmarkExplorer] = publicInstance;
   return bookmarkExplorer.treeDataProvider;
 }
+
+export const TEST_FOLDER_LOCATION = "c:\\multi-project\\testFolder";
+export const STORAGE_LOCATION = path.join(TEST_FOLDER_LOCATION, "storage");

@@ -6,19 +6,17 @@ import * as vscode from "vscode";
 import { PROJECT_STORAGE_FILE } from "../../constants";
 import { ProjectItem } from "../../explorer/multiProjectExplorer";
 import { ContextValueType, IProject } from "../../type";
-import { getData, getMultiProjectProvider, initStorage, restoreConfig, saveConfig, setConfig, sleep } from "../helper";
+import { getData, getMultiProjectProvider, initStorage, restoreConfig, saveConfig, setConfig, sleep, STORAGE_LOCATION, TEST_FOLDER_LOCATION } from "../helper";
 import { mock, mockedOpenVSCode, spyCreateTerminal, spyExecuteCommand, spyShowInputBox, spyShowQuickPick, spyShowTextDocument } from "../__mock__";
-// const mock = new ModuleMocker(globalThis);
 
-const PROJECT_STORAGE_LOCATION = "c:\\multiProjectTest";
-const PROJECT_STORAGE_FULL_PATH = path.join(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FILE);
+const PROJECT_STORAGE_FULL_PATH = path.join(STORAGE_LOCATION, PROJECT_STORAGE_FILE);
 const initProjectData: IProject[] = [
   {
-    path: "c:\\JS_pattern_test",
+    path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test`,
     name: "JS_pattern_test",
   },
   {
-    path: "c:\\cypress-testbed",
+    path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
     name: "cypress-testbed",
   },
 ];
@@ -27,14 +25,14 @@ before(() => {
   saveConfig();
 });
 
-after(() => {
+after(async () => {
   // 기존 config 작업 복원
-  restoreConfig();
+  await restoreConfig();
 });
 
 suite("Multi Project Explorer", () => {
   before(async () => {
-    await setConfig("projectStorageLocation", PROJECT_STORAGE_LOCATION);
+    await setConfig("projectStorageLocation", STORAGE_LOCATION);
   });
 
   beforeEach(() => {
@@ -45,13 +43,18 @@ suite("Multi Project Explorer", () => {
     // File 등록 안함 / 이미 존재하는 Project면 제외
     const initProjectData: IProject[] = [
       {
-        path: "c:\\immer",
-        name: "immer",
+        path: `${TEST_FOLDER_LOCATION}\\portfolio_page`,
+        name: "portfolio_page",
       },
     ];
-    initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
+    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
     await sleep(50);
-    const uriList = [vscode.Uri.file("c:\\JS_pattern_test"), vscode.Uri.file("c:\\cypress-testbed"), vscode.Uri.file("c:\\cypress-testbed\\src\\App.tsx"), vscode.Uri.file("c:\\immer")];
+    const uriList = [
+      vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\JS_pattern_test`),
+      vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed`),
+      vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`),
+      vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\portfolio_page`),
+    ];
 
     await vscode.commands.executeCommand("multiProjectExplorer.addProject", null, uriList);
 
@@ -59,31 +62,31 @@ suite("Multi Project Explorer", () => {
     expect(data).toHaveLength(3);
     expect(data).toEqual([
       {
-        path: "c:\\immer",
-        name: "immer",
+        path: `${TEST_FOLDER_LOCATION}\\portfolio_page`,
+        name: "portfolio_page",
       },
       {
-        path: "c:\\JS_pattern_test",
+        path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test`,
         name: "JS_pattern_test",
       },
       {
-        path: "c:\\cypress-testbed",
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
         name: "cypress-testbed",
       },
     ]);
     expect(data).not.toContain([
       {
-        path: "c:\\cypress-testbed\\src\\App.tsx",
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
         name: "App.tsx",
       },
     ]);
   });
 
   test("remove project from UI", async () => {
-    initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
+    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
     await sleep(10);
     const project: IProject = {
-      path: "c:\\cypress-testbed",
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
       name: "cypress-testbed",
     };
     const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
@@ -94,14 +97,14 @@ suite("Multi Project Explorer", () => {
     expect(data).toHaveLength(1);
     expect(data).toEqual([
       {
-        path: "c:\\JS_pattern_test",
+        path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test`,
         name: "JS_pattern_test",
       },
     ]);
   });
 
   test("rename project", async () => {
-    initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
+    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
     await sleep(10);
 
     function stubbedShowInputBox(options?: vscode.InputBoxOptions, token?: vscode.CancellationToken): Thenable<string | undefined> {
@@ -113,7 +116,7 @@ suite("Multi Project Explorer", () => {
     spyShowInputBox.mockImplementationOnce(stubbedShowInputBox);
 
     const project: IProject = {
-      path: "c:\\cypress-testbed",
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
       name: "cypress-testbed",
     };
     const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
@@ -124,11 +127,11 @@ suite("Multi Project Explorer", () => {
     expect(data).toHaveLength(2);
     expect(data).toEqual([
       {
-        path: "c:\\JS_pattern_test",
+        path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test`,
         name: "JS_pattern_test",
       },
       {
-        path: "c:\\cypress-testbed",
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
         name: "renamed folder",
       },
     ]);
@@ -136,7 +139,7 @@ suite("Multi Project Explorer", () => {
 
   test("open project", async () => {
     const project: IProject = {
-      path: "c:\\cypress-testbed",
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
       name: "cypress-testbed",
     };
     const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
@@ -159,7 +162,7 @@ suite("Multi Project Explorer", () => {
   });
 
   test("open file", async () => {
-    const resource = vscode.Uri.file("c:\\cypress-testbed\\cypress.json");
+    const resource = vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\cypress.json`);
 
     await vscode.commands.executeCommand("multiProjectExplorer.openFile", resource);
 
@@ -177,7 +180,7 @@ suite("Multi Project Explorer", () => {
 
   test("open folder", async () => {
     const project: IProject = {
-      path: "c:\\cypress-testbed",
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
       name: "cypress-testbed",
     };
     const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
@@ -191,7 +194,7 @@ suite("Multi Project Explorer", () => {
     // Terminal 없는 경우
     // Terminal 없는 경우 show, sendText 호출되는지 확인할 수 없는 테스트 코드임.. @TODO
     const project: IProject = {
-      path: "c:\\cypress-testbed",
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
       name: "TestBed",
     };
     const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
@@ -223,11 +226,11 @@ suite("Multi Project Explorer", () => {
 suite("Multi Project Provider", () => {
   test("project item with directory", () => {
     const project = {
-      path: "c:\\testFolder",
-      name: "testFolder",
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
+      name: "cypress-testbed",
     };
     // const file = {
-    //   path: "c:\\cypress-testbed\\cypress.json",
+    //   path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\cypress.json`,
     //   name: "cypress.json"
     // }
 
@@ -243,7 +246,7 @@ suite("Multi Project Provider", () => {
 
   test("project item with file", () => {
     const projectFile = {
-      path: "c:\\cypress-testbed\\cypress.json",
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\cypress.json`,
       name: "cypress.json",
     };
 
@@ -259,7 +262,7 @@ suite("Multi Project Provider", () => {
   });
 
   test("get children at first load", async () => {
-    initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
+    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
     await sleep(10);
 
     const treeDataProvider = getMultiProjectProvider();
@@ -277,8 +280,8 @@ suite("Multi Project Provider", () => {
 
     const treeDataProvider = getMultiProjectProvider();
     const project = {
-      path: "c:\\testFolder",
-      name: "testFolder",
+      path: `${TEST_FOLDER_LOCATION}\\portfolio_page`,
+      name: "portfolio_page",
     };
     const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
 
@@ -287,24 +290,24 @@ suite("Multi Project Provider", () => {
     const expectedProjectItems = [
       new ProjectItem(
         {
-          path: "c:\\testFolder\\.gitignore",
-          name: ".gitignore",
-        },
-        vscode.FileType.File
-      ),
-      new ProjectItem(
-        {
-          path: "c:\\testFolder\\src",
+          path: `${TEST_FOLDER_LOCATION}\\portfolio_page\\src`,
           name: "src",
         },
         vscode.FileType.Directory
+      ),
+      new ProjectItem(
+        {
+          path: `${TEST_FOLDER_LOCATION}\\portfolio_page\\.gitignore`,
+          name: ".gitignore",
+        },
+        vscode.FileType.File
       ),
     ];
     expect(expectedProjectItems).toEqual(projectItems);
     expect(projectItems).not.toContain(
       new ProjectItem(
         {
-          path: "c:\\testFolder\\node_modules",
+          path: `${TEST_FOLDER_LOCATION}\\portfolio_page\\node_modules`,
           name: "node_modules",
         },
         vscode.FileType.Directory
@@ -313,7 +316,7 @@ suite("Multi Project Provider", () => {
     expect(projectItems).not.toContain(
       new ProjectItem(
         {
-          path: "c:\\testFolder\\App.tsx",
+          path: `${TEST_FOLDER_LOCATION}\\portfolio_page\\App.tsx`,
           name: "App.tsx",
         },
         vscode.FileType.File
@@ -321,15 +324,61 @@ suite("Multi Project Provider", () => {
     );
   });
 
+  test("sort directory and file sequently", async () => {
+    await setConfig("ignoredFolders", []);
+    await setConfig("fileName", "*");
+
+    const treeDataProvider = getMultiProjectProvider();
+    const project = {
+      path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test`,
+      name: "JS_pattern_test",
+    };
+    const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
+
+    const projectItems = await treeDataProvider.getChildren(projectItem);
+
+    const expectedProjectItems = [
+      new ProjectItem(
+        {
+          path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test\\resources`,
+          name: "resources",
+        },
+        vscode.FileType.Directory
+      ),
+      new ProjectItem(
+        {
+          path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test\\server`,
+          name: "server",
+        },
+        vscode.FileType.Directory
+      ),
+      new ProjectItem(
+        {
+          path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test\\App.tsx`,
+          name: "App.tsx",
+        },
+        vscode.FileType.File
+      ),
+      new ProjectItem(
+        {
+          path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test\\index.html`,
+          name: "index.html",
+        },
+        vscode.FileType.File
+      ),
+    ];
+    expect(expectedProjectItems).toEqual(projectItems);
+  });
+
   test("sync and refresh when projects.json changes", async () => {
-    initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, []);
+    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, []);
     await sleep(50);
     const treeDataProvider = getMultiProjectProvider();
     const spyTreeDataProviderRefresh = spyOn(treeDataProvider, "refresh");
 
-    initStorage(PROJECT_STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, [
+    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, [
       {
-        path: "c:\\testFolder\\src",
+        path: `${TEST_FOLDER_LOCATION}\\portfolio_page\\src`,
         name: "src",
       },
     ]);
@@ -337,7 +386,7 @@ suite("Multi Project Provider", () => {
 
     expect(treeDataProvider.projects).toEqual([
       {
-        path: "c:\\testFolder\\src",
+        path: `${TEST_FOLDER_LOCATION}\\portfolio_page\\src`,
         name: "src",
       },
     ]);

@@ -54,7 +54,7 @@ abstract class StoragePath {
   constructor(protected globalStoragePath: string) {}
   get storageLocation(): string {
     let location;
-    if (this.storageLocationFromConfig) {
+    if (!_.isEmpty(this.storageLocationFromConfig)) {
       const storageUri = vscode.Uri.file(this.storageLocationFromConfig);
       location = storageUri.fsPath;
     } else {
