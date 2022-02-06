@@ -7,7 +7,7 @@ import { PROJECT_STORAGE_FILE } from "../../constants";
 import { ProjectItem } from "../../explorer/multiProjectExplorer";
 import { ContextValueType, IProject } from "../../type";
 import { getData, getMultiProjectProvider, initStorage, restoreConfig, saveConfig, setConfig, sleep, STORAGE_LOCATION, TEST_FOLDER_LOCATION } from "../helper";
-import { mock, mockedOpenVSCode, spyCreateTerminal, spyExecuteCommand, spyShowInputBox, spyShowQuickPick, spyShowTextDocument } from "../__mock__";
+import { mock, mockedOpenVSCode, spyCreateTerminal, spyExecuteCommand, spyShowInputBox, spyShowQuickPick, spyShowTextDocument, spyTreeDataProviderRefresh } from "../__mock__";
 
 const PROJECT_STORAGE_FULL_PATH = path.join(STORAGE_LOCATION, PROJECT_STORAGE_FILE);
 const initProjectData: IProject[] = [
@@ -190,6 +190,7 @@ suite("Multi Project Explorer", () => {
     expect(spyExecuteCommand).toHaveBeenCalledTimes(1);
     expect(mockedOpenVSCode).toHaveBeenCalledWith(projectItem.resourceUri, true);
   });
+
   test("open terminal", async () => {
     // Terminal 없는 경우
     // Terminal 없는 경우 show, sendText 호출되는지 확인할 수 없는 테스트 코드임.. @TODO
@@ -220,6 +221,17 @@ suite("Multi Project Explorer", () => {
     expect(targetTerminal.name).toBe(projectItem.label);
     expect(targetTerminal.show).toHaveBeenCalled();
     expect(targetTerminal.sendText).toHaveBeenCalledWith(`cd ${projectItem.project.path}`);
+  });
+
+  test("refresh when fileName configuration has changed", async () => {
+    await setConfig("fileName", "git");
+
+    expect(spyTreeDataProviderRefresh).toHaveBeenCalled();
+  });
+  test("refresh when ignoredFolders configuration has changed", async () => {
+    await setConfig("ignoredFolders", ["node_modules"]);
+
+    expect(spyTreeDataProviderRefresh).toHaveBeenCalled();
   });
 });
 
@@ -374,7 +386,6 @@ suite("Multi Project Provider", () => {
     initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, []);
     await sleep(50);
     const treeDataProvider = getMultiProjectProvider();
-    const spyTreeDataProviderRefresh = spyOn(treeDataProvider, "refresh");
 
     initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, [
       {
@@ -391,6 +402,5 @@ suite("Multi Project Provider", () => {
       },
     ]);
     expect(spyTreeDataProviderRefresh).toHaveBeenCalled();
-    spyTreeDataProviderRefresh.mockRestore();
   });
 });
