@@ -52,8 +52,8 @@ suite("Multi Project Explorer", () => {
     const uriList = [
       vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\JS_pattern_test`),
       vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed`),
-      vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`),
-      vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\portfolio_page`),
+      vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`), // File Type
+      vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\portfolio_page`), // 이미 존재하는 project
     ];
 
     await vscode.commands.executeCommand("multiProjectExplorer.addProject", null, uriList);
@@ -162,7 +162,7 @@ suite("Multi Project Explorer", () => {
   });
 
   test("open file", async () => {
-    const resource = vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\cypress.json`);
+    const resource = vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.test.tsx`);
 
     await vscode.commands.executeCommand("multiProjectExplorer.openFile", resource);
 
@@ -241,10 +241,6 @@ suite("Multi Project Provider", () => {
       path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
       name: "cypress-testbed",
     };
-    // const file = {
-    //   path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\cypress.json`,
-    //   name: "cypress.json"
-    // }
 
     const projectItem = new ProjectItem(project, vscode.FileType.Unknown);
 

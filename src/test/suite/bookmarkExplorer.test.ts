@@ -116,7 +116,7 @@ suite("Bookmark Explorer", () => {
   });
 
   test("open file", async () => {
-    const resource = vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\cypress.json`);
+    const resource = vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`);
 
     await vscode.commands.executeCommand("bookmarkExplorer.openFile", resource);
 
@@ -170,8 +170,8 @@ suite("Bookmark Provider", () => {
 
     const initBookmarkData = [
       {
-        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\cypress.json`,
-        name: "cypress.json",
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+        name: "App.tsx",
       },
     ];
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);

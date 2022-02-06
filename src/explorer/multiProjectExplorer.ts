@@ -51,7 +51,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     if (element) {
       const elementUri = vscode.Uri.file(element.project.path);
       const children = await this.readDirectory(elementUri);
-      const filteredChildren = this.filterChildren(children, elementUri.fsPath);
+      const filteredChildren = this.getProjectItems(children, elementUri.fsPath);
       return this.sortChildren(filteredChildren);
     }
 
@@ -81,7 +81,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     return directory.concat(files);
   }
 
-  private filterChildren(children: [string, vscode.FileType][], filepath: string) {
+  private getProjectItems(children: [string, vscode.FileType][], filepath: string): ProjectItem[] {
     return children.reduce((result: ProjectItem[], [name, type]) => {
       if (this.validateFile(name, type)) {
         const project: IProject = ProjectStorage.createDefaultProject(path.join(filepath, name), name);
@@ -223,11 +223,12 @@ export class MultiProjectExplorer {
 
   async addProject(uri: vscode.Uri, uriList: vscode.Uri[]) {
     // console.log(args);
-    const filteredUriList = this.treeDataProvider.filterType(uriList, vscode.FileType.File);
-    const filePathList = getFilePath(filteredUriList);
+    const directoryUriList = this.treeDataProvider.filterType(uriList, vscode.FileType.File);
+    const filePathList = getFilePath(directoryUriList);
     const projects = filePathList.map(projectPath => ProjectStorage.createDefaultProject(projectPath));
-    const filteredProjects = projects.filter(project => !this.treeDataProvider.hasProject(project));
-    const resultProjects = this.treeDataProvider.projects.concat(filteredProjects);
+    const onlyNewProjects = projects.filter(project => !this.treeDataProvider.hasProject(project));
+    const resultProjects = this.treeDataProvider.projects.concat(onlyNewProjects);
+
     this.treeDataProvider.updateProjects(resultProjects);
   }
 
