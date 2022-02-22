@@ -48,7 +48,7 @@ suite("Multi Project Explorer", () => {
       },
     ];
     initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
-    await sleep(50);
+    await sleep();
     const uriList = [
       vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\JS_pattern_test`),
       vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed`),
@@ -84,7 +84,7 @@ suite("Multi Project Explorer", () => {
 
   test("remove project from UI", async () => {
     initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
-    await sleep(10);
+    await sleep();
     const project: IProject = {
       path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
       name: "cypress-testbed",
@@ -105,7 +105,7 @@ suite("Multi Project Explorer", () => {
 
   test("rename project", async () => {
     initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
-    await sleep(10);
+    await sleep();
 
     function stubbedShowInputBox(options?: vscode.InputBoxOptions, token?: vscode.CancellationToken): Thenable<string | undefined> {
       return new Promise((resolve, reject) => {
@@ -271,7 +271,7 @@ suite("Multi Project Provider", () => {
 
   test("get children at first load", async () => {
     initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, initProjectData);
-    await sleep(10);
+    await sleep();
 
     const treeDataProvider = getMultiProjectProvider();
     const expectedProjectItems = initProjectData.map(project => new ProjectItem(project, vscode.FileType.Unknown));
@@ -380,7 +380,7 @@ suite("Multi Project Provider", () => {
 
   test("sync and refresh when projects.json changes", async () => {
     initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, []);
-    await sleep(50);
+    await sleep();
     const treeDataProvider = getMultiProjectProvider();
 
     initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, [
@@ -389,7 +389,7 @@ suite("Multi Project Provider", () => {
         name: "src",
       },
     ]);
-    await sleep(50);
+    await sleep();
 
     expect(treeDataProvider.projects).toEqual([
       {

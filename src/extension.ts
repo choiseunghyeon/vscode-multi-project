@@ -3,6 +3,7 @@
 import * as vscode from "vscode";
 import { BookmarkExplorer } from "./explorer/bookmarkExplorer";
 import { MultiProjectExplorer } from "./explorer/multiProjectExplorer";
+import { TaskExplorer } from "./explorer/taskExplorer";
 import { IRegisterCommand } from "./type";
 
 const addSubscriptions = (context: vscode.ExtensionContext, units: any): void => {
@@ -26,11 +27,9 @@ export let publicInstance: any;
 export function activate(context: vscode.ExtensionContext) {
   const multiProjectExplorer = new MultiProjectExplorer(context.globalStorageUri.fsPath);
   const bookmarkExplorer = new BookmarkExplorer(context.globalStorageUri.fsPath);
-  const units = [];
-  units.push(multiProjectExplorer, bookmarkExplorer);
-  addSubscriptions(context, units);
-
-  publicInstance = units;
+  const taskExplorer = new TaskExplorer(context.globalStorageUri.fsPath);
+  publicInstance = [multiProjectExplorer, bookmarkExplorer, taskExplorer];
+  addSubscriptions(context, publicInstance);
 }
 
 // this method is called when your extension is deactivated

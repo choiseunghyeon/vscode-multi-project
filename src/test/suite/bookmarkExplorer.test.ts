@@ -43,7 +43,7 @@ suite("Bookmark Explorer", () => {
   test("add multiple bookmark from Explorer", async () => {
     const initBookmarkData: IBookmark[] = [];
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
-    await sleep(50);
+    await sleep();
     const uriList = [
       vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\JS_pattern_test`),
       vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`),
@@ -75,7 +75,7 @@ suite("Bookmark Explorer", () => {
   test("add bookmark from Multi Project Explorer", async () => {
     const initBookmarkData: IProject[] = [];
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
-    await sleep(50);
+    await sleep();
     const project: IProject = {
       path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
       name: "App.tsx",
@@ -96,7 +96,7 @@ suite("Bookmark Explorer", () => {
 
   test("remove bookmark from UI", async () => {
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
-    await sleep(10);
+    await sleep();
     const bookmark: IBookmark = {
       path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
       name: "App.tsx",
@@ -152,7 +152,7 @@ suite("Bookmark Provider", () => {
 
   test("get children at first load", async () => {
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
-    await sleep(10);
+    await sleep();
 
     const treeDataProvider = getBookmarkProvider();
     const expectedBookmarkItems = initBookmarkData.map(bookmark => new BookmarkItem(bookmark, vscode.FileType.File));
@@ -164,7 +164,7 @@ suite("Bookmark Provider", () => {
 
   test("sync and refresh when projects.json changes", async () => {
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, []);
-    await sleep(50);
+    await sleep();
     const treeDataProvider = getBookmarkProvider();
     const spyTreeDataProviderRefresh = spyOn(treeDataProvider, "refresh");
 
@@ -175,7 +175,7 @@ suite("Bookmark Provider", () => {
       },
     ];
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
-    await sleep(50);
+    await sleep();
 
     expect(treeDataProvider.bookmarks).toEqual(initBookmarkData);
     expect(spyTreeDataProviderRefresh).toHaveBeenCalled();

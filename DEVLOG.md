@@ -24,8 +24,11 @@
     - 한계: 현재 workspace에 있는 task만 가져옴 vscode.tasks.fetchTasks()
     - multi-root workspaces를 사용하면 workspaceFolders로 등록된 각 workspace에서 tasks 정보 가져올 수 있지만 검색 및 explorer 그리고 ctrl + shift + b(run build tasks)또한 통합되어 tasks들이 나옴 - 불편해짐
 - 테스트 코드 작성
+
   - sleep 들어가는 코드 수정해야함 처리 속도에 따라 테스트 케이스 실패할 수 있음 - readFileSync mocking?
   - 리팩토링
+
+- workspace 추가
 
 ## 기능
 
