@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
 import { ModuleMocker } from "jest-mock";
+import * as vscode from "vscode";
 import * as native from "../utils/native";
 import { getMultiProjectProvider } from "./helper";
 

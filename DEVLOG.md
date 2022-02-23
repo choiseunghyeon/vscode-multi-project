@@ -1,17 +1,3 @@
-## 개발 완료
-
-- ignore folder 지정
-- 설정 변경 값 즉시 반영
-- add Proejct, remove Project 구현
-- 해당 프로젝트 터미널 오픈
-- 등록된 프로젝트 빠르게 열기(quickpick)
-- Bookmark - 추가, 삭제
-- 프로젝트 화면 띄우기(contextMenu, quickpick 등) - 버그 수정
-- Add Multiple Project(다중 선택된 폴더 프로젝트로 지정) - file 선택되더라도 filtering됨
-- 프로젝트 이름 변경(aliases)
-- 필요한 값을 가져오기 위해 configuration 대신 globalStorage 사용으로 변경 (project, bookmark)
-- 기존 configuration 사용되던 데이터 globarStorageUri로 이전
-
 ## 개발 예정
 
 - 순서 변경
@@ -29,8 +15,19 @@
   - 리팩토링
 
 - workspace 추가
+- 영어문서 제작
+
+## Unit Test가 힘든 이유
+
+- vscode.TreeItem의 경우 실제 class 코드가 없는 경우 해당 객체를 활용한 테스트가 어려움
+- 사용하는 모든 vscode에 대한 mocking
+- file update 시 storage 업데이트 되는 테스트 케이스 작성의 어려움
 
 ## 기능
+
+- etc
+
+  1. Configuration 변경 시 즉시 반영 (ignore folder)
 
 - Project Explorer
 

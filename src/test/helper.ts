@@ -10,8 +10,8 @@ import path = require("path");
 /* Configuration */
 export function getConfigurationFileName(): Function {
   const result = vscode.workspace.getConfiguration("multiProject").get("fileName", "*");
-  function restore() {
-    setConfig("fileName", result);
+  async function restore() {
+    await setConfig("fileName", result);
   }
 
   return restore;
@@ -19,8 +19,26 @@ export function getConfigurationFileName(): Function {
 
 export function getConfigurationIgnoredFolders(): Function {
   const result = vscode.workspace.getConfiguration("multiProject").get("ignoredFolders", []);
-  function restore() {
-    setConfig("ignoredFolders", result);
+  async function restore() {
+    await setConfig("ignoredFolders", result);
+  }
+
+  return restore;
+}
+
+export function getConfigurationProjectStorageLocation(): Function {
+  const result = vscode.workspace.getConfiguration("multiProject").get("projectStorageLocation", "");
+  async function restore() {
+    await setConfig("projectStorageLocation", result);
+  }
+
+  return restore;
+}
+
+export function getConfigurationBookmarkStorageLocation(): Function {
+  const result = vscode.workspace.getConfiguration("multiProject").get("bookmarkStorageLocation", "");
+  async function restore() {
+    await setConfig("bookmarkStorageLocation", result);
   }
 
   return restore;
@@ -28,7 +46,7 @@ export function getConfigurationIgnoredFolders(): Function {
 
 let restoreConfigList: Function[] = [];
 export function saveConfig() {
-  restoreConfigList.push(getConfigurationFileName(), getConfigurationIgnoredFolders());
+  restoreConfigList.push(getConfigurationFileName(), getConfigurationIgnoredFolders(), getConfigurationProjectStorageLocation(), getConfigurationBookmarkStorageLocation());
 }
 
 export async function restoreConfig() {

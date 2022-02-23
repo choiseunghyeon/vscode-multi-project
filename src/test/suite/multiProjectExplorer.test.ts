@@ -1,6 +1,5 @@
 import * as expect from "expect"; // jest matchers
-import { spyOn } from "jest-mock";
-import { after, before, beforeEach } from "mocha";
+import { before, beforeEach } from "mocha";
 import path = require("path");
 import * as vscode from "vscode";
 import { PROJECT_STORAGE_FILE } from "../../constants";
@@ -21,19 +20,10 @@ const initProjectData: IProject[] = [
   },
 ];
 
-before(() => {
-  saveConfig();
-});
-
-after(async () => {
-  // 기존 config 작업 복원
-  await restoreConfig();
-});
-
 suite("Multi Project Explorer", () => {
-  before(async () => {
-    await setConfig("projectStorageLocation", STORAGE_LOCATION);
-  });
+  // before(async () => {
+  //   await setConfig("projectStorageLocation", STORAGE_LOCATION);
+  // });
 
   beforeEach(() => {
     mock.clearAllMocks();
