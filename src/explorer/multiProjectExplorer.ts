@@ -148,6 +148,9 @@ export class ProjectItem extends vscode.TreeItem {
       case vscode.FileType.File:
         this.contextValue = ContextValueType.File;
         break;
+      case vscode.FileType.Directory:
+        this.contextValue = ContextValueType.ProjectChild;
+        break;
       default:
         this.contextValue = ContextValueType.Default;
         break;
@@ -238,10 +241,15 @@ export class MultiProjectExplorer {
     this.treeDataProvider.updateProjects(projects);
   }
 
-  async addProject(uri: vscode.Uri, uriList: vscode.Uri[]) {
+  async addProject(something: vscode.Uri | ProjectItem, uriList: vscode.Uri[]) {
     // console.log(args);
-    const directoryUriList = this.treeDataProvider.filterType(uriList, vscode.FileType.File);
-    const filePathList = getFilePath(directoryUriList);
+    let filePathList;
+    if (ProjectItem.isProejctItem(something)) {
+      filePathList = getFilePath(something);
+    } else {
+      const directoryUriList = this.treeDataProvider.filterType(uriList, vscode.FileType.File);
+      filePathList = getFilePath(directoryUriList);
+    }
     const projects = filePathList.map(projectPath => ProjectStorage.createDefaultProject(projectPath));
     const onlyNewProjects = projects.filter(project => !this.treeDataProvider.hasProject(project));
     const resultProjects = this.treeDataProvider.projects.concat(onlyNewProjects);

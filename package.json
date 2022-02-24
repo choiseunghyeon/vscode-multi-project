@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/choiseunghyeon/vscode-multi-project"
   },
-  "version": "0.0.8",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.62.0"
   },
@@ -166,6 +166,10 @@
           "when": "view == multiProjectExplorer && viewItem == project"
         },
         {
+          "command": "multiProjectExplorer.addProject",
+          "when": "view == multiProjectExplorer && viewItem == projectChild"
+        },
+        {
           "command": "bookmarkExplorer.addBookmark",
           "when": "view == multiProjectExplorer && viewItem == file"
         },
@@ -215,7 +219,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "publish": "vsce publish"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

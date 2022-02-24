@@ -15,6 +15,7 @@ export interface IRegisterCommand {
 
 export const enum ContextValueType {
   Project = "project",
+  ProjectChild = "projectChild",
   File = "file",
   Default = "default",
 }

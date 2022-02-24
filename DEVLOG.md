@@ -1,5 +1,6 @@
 ## 개발 예정
 
+- Multi Project Explorer Project Child도 add Project 가능 하도록
 - 프로그레스바 표시
 - github 기능 추가
 - 원하는 task 등록하는 기능 (ex. 등록된 모든 project의 git fetch, 자동 rebase 또는 끌어오기 등)
@@ -30,11 +31,16 @@
 - Project Explorer
 
   1. alises 별칭 지정
-  2. 프로젝트 추가(다중) / 삭제
-  3. 특정 폴더 숨기기(ignore folder)
-  4. 폴더 파일 순서로 표시
-  5. 프로젝트 터미널 오픈
-  6. 프로젝트 빠르게 열기 (command palette, explorer item context inline )
+  2. 프로젝트 추가
+
+     - Explorer에서 디렉토리 단일, 다중 추가
+     - Multi Project Explorer에서 하위 디렉토리 단일 추가
+
+  3. 프로젝트 삭제
+  4. 특정 폴더 숨기기(ignore folder)
+  5. 폴더 파일 순서로 표시
+  6. 프로젝트 터미널 오픈
+  7. 프로젝트 빠르게 열기 (command palette, explorer item context inline )
 
 - Bookmark Explorer
 

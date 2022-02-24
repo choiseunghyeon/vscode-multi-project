@@ -19,6 +19,7 @@ const initProjectData: IProject[] = [
     name: "cypress-testbed",
   },
 ];
+const emptyProjectData: IProject[] = [];
 
 suite("Multi Project Explorer", () => {
   before(async () => {
@@ -69,6 +70,27 @@ suite("Multi Project Explorer", () => {
       {
         path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
         name: "App.tsx",
+      },
+    ]);
+  });
+
+  test("add project child from UI", async () => {
+    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, emptyProjectData);
+    await sleep();
+    const project: IProject = {
+      path: `${TEST_FOLDER_LOCATION}\\portfolio_page`,
+      name: "portfolio_page",
+    };
+    const projectItem = new ProjectItem(project, vscode.FileType.Directory);
+
+    await vscode.commands.executeCommand("multiProjectExplorer.addProject", projectItem, undefined);
+
+    const data = getData(PROJECT_STORAGE_FULL_PATH);
+    expect(data).toHaveLength(1);
+    expect(data).toEqual([
+      {
+        path: `${TEST_FOLDER_LOCATION}\\portfolio_page`,
+        name: "portfolio_page",
       },
     ]);
   });
@@ -227,7 +249,8 @@ suite("Multi Project Explorer", () => {
 });
 
 suite("Multi Project Provider", () => {
-  test("project item with directory", () => {
+  test("project item with Unkown File Type", () => {
+    // root project의 경우
     const project = {
       path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
       name: "cypress-testbed",
@@ -243,7 +266,23 @@ suite("Multi Project Provider", () => {
     expect(projectItem.type).toBe(vscode.FileType.Unknown);
   });
 
-  test("project item with file", () => {
+  test("project item with Directory", () => {
+    // project 하위 project인 경우
+    const project = {
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed`,
+      name: "cypress-testbed",
+    };
+
+    const projectItem = new ProjectItem(project, vscode.FileType.Directory);
+
+    expect(projectItem.label).toBe(project.name);
+    expect(projectItem.collapsibleState).toBe(vscode.TreeItemCollapsibleState.Collapsed);
+    expect(projectItem.resourceUri).toEqual(vscode.Uri.file(project.path));
+    expect(projectItem.contextValue).toBe(ContextValueType.ProjectChild);
+    expect(projectItem.type).toBe(vscode.FileType.Directory);
+  });
+
+  test("project item with File", () => {
     const projectFile = {
       path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\cypress.json`,
       name: "cypress.json",
@@ -370,7 +409,7 @@ suite("Multi Project Provider", () => {
   });
 
   test("sync and refresh when projects.json changes", async () => {
-    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, []);
+    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, emptyProjectData);
     await sleep();
     const treeDataProvider = getMultiProjectProvider();
 
