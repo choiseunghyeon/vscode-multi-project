@@ -14,11 +14,23 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
 
   constructor(public storage: ProjectStorage) {
     super();
-    storage.load();
-    storage.onDidChangeFile(e => {
-      storage.syncDataFromDiskFile();
+    this.loadStorage();
+  }
+
+  loadStorage() {
+    this.storage.load();
+    this.refresh();
+    this.storage.onDidChangeFile(e => {
+      this.storage.syncDataFromDiskFile();
       this.refresh();
     });
+  }
+
+  setStorage(newStorage: ProjectStorage) {
+    this.storage.unload();
+
+    this.storage = newStorage;
+    this.loadStorage();
   }
 
   hasProject(targetProject: IProject) {
@@ -170,6 +182,11 @@ export class MultiProjectExplorer {
       if (cfg.affectsConfiguration("multiProject.fileName") || cfg.affectsConfiguration("multiProject.ignoredFolders")) {
         this.refresh();
       }
+
+      if (cfg.affectsConfiguration("multiProject.projectStorageLocation")) {
+        const newStorage = new ProjectStorage(projectPath.storageLocation, PROJECT_STORAGE_FILE);
+        this.treeDataProvider.setStorage(newStorage);
+      }
     });
   }
 
@@ -182,7 +199,7 @@ export class MultiProjectExplorer {
       createCommand("multiProjectExplorer.openFile", this.openFile),
       createCommand("multiProjectExplorer.editProject", this.editProjectFile),
       createCommand("multiProjectExplorer.openFolder", this.openFolder),
-      createCommand("multiProjectExplorer.refreshEntry", this.refresh),
+      createCommand("multiProjectExplorer.refreshProjectExplorerEntry", this.refresh),
       createCommand("multiProjectExplorer.openTerminal", this.openTerminal),
     ];
   }

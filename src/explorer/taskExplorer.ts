@@ -104,7 +104,7 @@ export class TaskExplorer {
       // createCommand("bookmarkExplorer.addBookmark", this.addBookmark),
       // createCommand("bookmarkExplorer.removeBookmark", this.removeBookmark),
     ];
-    // vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => treeDataProvider.refresh());
+    // vscode.commands.registerCommand("multiProjectExplorer.refreshProjectExplorerEntry", () => treeDataProvider.refresh());
   }
 
   openBookmarkFile() {

@@ -1,7 +1,5 @@
 ## 개발 예정
 
-- 순서 변경
-- 선택된 프로젝트 대상 검색
 - 프로그레스바 표시
 - github 기능 추가
 - 원하는 task 등록하는 기능 (ex. 등록된 모든 project의 git fetch, 자동 rebase 또는 끌어오기 등)
@@ -27,15 +25,16 @@
 
 - etc
 
-  1. Configuration 변경 시 즉시 반영 (ignore folder)
+  1. Configuration 변경 시 즉시 반영 (ignore folder, file name, project stroage location) - bookmark storage location은 refresh시 getChildren 실행되지 않음 코어 로직 분석 필요해 보임
 
 - Project Explorer
 
   1. alises 별칭 지정
   2. 프로젝트 추가(다중) / 삭제
   3. 특정 폴더 숨기기(ignore folder)
-  4. 프로젝트 터미널 오픈
-  5. 프로젝트 빠르게 열기
+  4. 폴더 파일 순서로 표시
+  5. 프로젝트 터미널 오픈
+  6. 프로젝트 빠르게 열기 (command palette, explorer item context inline )
 
 - Bookmark Explorer
 

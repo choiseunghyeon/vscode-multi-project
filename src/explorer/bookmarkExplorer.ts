@@ -15,23 +15,33 @@ export class BookmarkProvider extends FileSystemProvider implements vscode.TreeD
 
   constructor(public storage: BookmarkStorage) {
     super();
-    storage.load();
-    storage.onDidChangeFile(e => {
-      storage.syncDataFromDiskFile();
+    this.loadStorage();
+  }
+
+  loadStorage() {
+    this.storage.load();
+    this.refresh();
+    this.storage.onDidChangeFile(e => {
+      this.storage.syncDataFromDiskFile();
       this.refresh();
     });
   }
 
+  setStorage(newStorage: BookmarkStorage) {
+    this.storage.unload();
+    this.storage = newStorage;
+    this.loadStorage();
+  }
+
   get bookmarks(): IBookmark[] {
     return this.storage.data;
-    // return vscode.workspace.getConfiguration("multiProject").get("bookmarks", []);
   }
 
   updateBookmarks(bookmarks: IBookmark[]) {
     this.storage.update(bookmarks);
   }
 
-  refresh(): void {
+  public refresh(): void {
     this._onDidChangeTreeData.fire();
   }
 
@@ -95,6 +105,13 @@ export class BookmarkExplorer {
     }
 
     vscode.window.createTreeView("bookmarkExplorer", { treeDataProvider: this.treeDataProvider });
+
+    vscode.workspace.onDidChangeConfiguration(async cfg => {
+      if (cfg.affectsConfiguration("multiProject.bookmarkStorageLocation")) {
+        const newStorage = new BookmarkStorage(bookmarkPath.storageLocation, BOOKMARK_STORAGE_FILE);
+        this.treeDataProvider.setStorage(newStorage);
+      }
+    });
   }
 
   getCommands() {
@@ -103,8 +120,13 @@ export class BookmarkExplorer {
       createCommand("bookmarkExplorer.editBookmark", this.openBookmarkFile),
       createCommand("bookmarkExplorer.addBookmark", this.addBookmark),
       createCommand("bookmarkExplorer.removeBookmark", this.removeBookmark),
+      createCommand("bookmarkExplorer.refreshBookmarkExplorerEntry", this.refresh),
     ];
-    // vscode.commands.registerCommand("multiProjectExplorer.refreshEntry", () => treeDataProvider.refresh());
+    // vscode.commands.registerCommand("multiProjectExplorer.refreshProjectExplorerEntry", () => treeDataProvider.refresh());
+  }
+
+  refresh() {
+    this.treeDataProvider.refresh();
   }
 
   openBookmarkFile() {

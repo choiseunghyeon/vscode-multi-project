@@ -23,9 +23,9 @@ const initBookmarkData: IBookmark[] = [
 ];
 
 suite("Bookmark Explorer", () => {
-  // before(async () => {
-  //   await setConfig("bookmarkStorageLocation", STORAGE_LOCATION);
-  // });
+  before(async () => {
+    await setConfig("bookmarkStorageLocation", STORAGE_LOCATION);
+  });
 
   beforeEach(() => {
     mock.clearAllMocks();

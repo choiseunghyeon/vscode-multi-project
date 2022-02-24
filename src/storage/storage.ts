@@ -6,10 +6,13 @@ import { FileSystemProvider, fsUtils } from "../FileSystemProvider";
 export abstract class Storage extends FileSystemProvider {
   _uri: vscode.Uri;
   protected _data: any;
+  protected _disposables: vscode.Disposable[];
+  // protected disposables: vscode.Disposable[];
   constructor(protected location: string, protected fileName: string) {
     super();
     const fullPath = path.join(location, fileName);
     this._uri = vscode.Uri.file(fullPath);
+    this._disposables = [];
   }
 
   get uri() {
@@ -18,6 +21,16 @@ export abstract class Storage extends FileSystemProvider {
 
   get data() {
     return _.cloneDeep(this._data);
+  }
+
+  pushDisposable(disposable: vscode.Disposable) {
+    this._disposables.push(disposable);
+  }
+
+  public unload() {
+    // this._disposables.forEach(disp => {
+    //   disp();
+    // })
   }
 
   abstract get defaultStorageValue(): any;
@@ -31,7 +44,8 @@ export abstract class Storage extends FileSystemProvider {
     }
 
     this.syncDataFromDiskFile();
-    this.watch(this._uri, { recursive: false, excludes: [] });
+    const disposable = this.watch(this._uri, { recursive: false, excludes: [] });
+    this.pushDisposable(disposable);
   }
 
   public syncDataFromDiskFile() {

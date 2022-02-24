@@ -21,9 +21,10 @@ const initProjectData: IProject[] = [
 ];
 
 suite("Multi Project Explorer", () => {
-  // before(async () => {
-  //   await setConfig("projectStorageLocation", STORAGE_LOCATION);
-  // });
+  before(async () => {
+    // configuration projectStorageLocation 변경 실시간 적용 안되는 경우 테스트 전부 깨짐
+    await setConfig("projectStorageLocation", STORAGE_LOCATION);
+  });
 
   beforeEach(() => {
     mock.clearAllMocks();

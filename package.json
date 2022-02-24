@@ -46,8 +46,8 @@
     },
     "commands": [
       {
-        "command": "multiProjectExplorer.refreshEntry",
-        "title": "Refresh",
+        "command": "multiProjectExplorer.refreshProjectExplorerEntry",
+        "title": "Project Explorer Refresh",
         "icon": "$(debug-restart)"
       },
       {
@@ -62,6 +62,11 @@
       {
         "command": "multiProjectExplorer.openFile",
         "title": "Open File"
+      },
+      {
+        "command": "bookmarkExplorer.refreshBookmarkExplorerEntry",
+        "title": "Bookmark Explorer Refresh",
+        "icon": "$(debug-restart)"
       },
       {
         "command": "bookmarkExplorer.editBookmark",
@@ -122,13 +127,18 @@
       ],
       "view/title": [
         {
-          "command": "multiProjectExplorer.refreshEntry",
+          "command": "multiProjectExplorer.refreshProjectExplorerEntry",
           "when": "view == multiProjectExplorer",
           "group": "navigation"
         },
         {
           "command": "multiProjectExplorer.editProject",
           "when": "view == multiProjectExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "bookmarkExplorer.refreshBookmarkExplorerEntry",
+          "when": "view == bookmarkExplorer",
           "group": "navigation"
         },
         {

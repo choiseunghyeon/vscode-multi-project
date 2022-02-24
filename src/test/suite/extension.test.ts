@@ -5,8 +5,6 @@ import { restoreConfig, saveConfig, setConfig, STORAGE_LOCATION } from "../helpe
 
 before(async () => {
   saveConfig();
-  await setConfig("projectStorageLocation", STORAGE_LOCATION);
-  await setConfig("bookmarkStorageLocation", STORAGE_LOCATION);
 });
 
 after(async () => {
