@@ -59,14 +59,6 @@ export class BookmarkProvider extends FileSystemProvider implements vscode.TreeD
   getTreeItem(element: BookmarkItem): BookmarkItem {
     return element;
   }
-
-  private filterChildren(children: [string, vscode.FileType][], filepath: string) {
-    return children.reduce((result: BookmarkItem[], [name, type]) => {
-      const bookmark = BookmarkStorage.createDefaultBookmark(path.join(filepath, name), name);
-      result.push(new BookmarkItem(bookmark, type));
-      return result;
-    }, []);
-  }
 }
 
 export class BookmarkItem extends vscode.TreeItem {
@@ -122,7 +114,6 @@ export class BookmarkExplorer {
       createCommand("bookmarkExplorer.removeBookmark", this.removeBookmark),
       createCommand("bookmarkExplorer.refreshBookmarkExplorerEntry", this.refresh),
     ];
-    // vscode.commands.registerCommand("multiProjectExplorer.refreshProjectExplorerEntry", () => treeDataProvider.refresh());
   }
 
   refresh() {
@@ -138,7 +129,6 @@ export class BookmarkExplorer {
   }
 
   addBookmark(thing: vscode.Uri | ProjectItem, uriList: vscode.Uri[]) {
-    // console.log(args);
     const params = ProjectItem.isProejctItem(thing) ? [vscode.Uri.file(thing.project.path)] : uriList;
     const filteredUriList = this.treeDataProvider.filterType(params, vscode.FileType.Directory);
     const filePathList = getFilePath(filteredUriList);
@@ -148,7 +138,6 @@ export class BookmarkExplorer {
   }
 
   removeBookmark(treeItem: BookmarkItem) {
-    // console.log(args);
     const filePathlist = getFilePath(treeItem);
     const resultBookmarks = this.treeDataProvider.bookmarks.filter(bookmark => !filePathlist.includes(bookmark.path));
     this.treeDataProvider.updateBookmarks(resultBookmarks);

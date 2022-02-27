@@ -1,6 +1,5 @@
 ## 개발 예정
 
-- Multi Project Explorer Project Child도 add Project 가능 하도록
 - 프로그레스바 표시
 - github 기능 추가
 - 원하는 task 등록하는 기능 (ex. 등록된 모든 project의 git fetch, 자동 rebase 또는 끌어오기 등)

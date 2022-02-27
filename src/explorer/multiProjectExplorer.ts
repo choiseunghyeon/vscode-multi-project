@@ -19,11 +19,11 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
 
   loadStorage() {
     this.storage.load();
-    this.refresh();
     this.storage.onDidChangeFile(e => {
       this.storage.syncDataFromDiskFile();
       this.refresh();
     });
+    this.refresh();
   }
 
   setStorage(newStorage: ProjectStorage) {
@@ -42,6 +42,10 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     return getConfigurationFileName();
   }
 
+  get ignoredFolders(): string[] {
+    return getConfigurationIgnoredFolders();
+  }
+
   get projects(): IProject[] {
     return this.storage.data;
   }
@@ -50,11 +54,7 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
     this.storage.update(projects);
   }
 
-  get ignoredFolders(): string[] {
-    return getConfigurationIgnoredFolders();
-  }
-
-  public refresh(): void {
+  refresh(): void {
     this._onDidChangeTreeData.fire();
   }
 
@@ -104,8 +104,8 @@ export class MultiProjectProvider extends FileSystemProvider implements vscode.T
   }
 
   private validateFile(name: string, type: vscode.FileType): boolean {
-    // 폴더 검증
     if (type === vscode.FileType.Directory) {
+      // 폴더 검증
       if (this.ignoredFolders.some(ignoreFolderName => ignoreFolderName === name)) {
         return false;
       }
@@ -241,11 +241,11 @@ export class MultiProjectExplorer {
     this.treeDataProvider.updateProjects(projects);
   }
 
-  async addProject(something: vscode.Uri | ProjectItem, uriList: vscode.Uri[]) {
+  async addProject(thing: vscode.Uri | ProjectItem, uriList: vscode.Uri[]) {
     // console.log(args);
     let filePathList;
-    if (ProjectItem.isProejctItem(something)) {
-      filePathList = getFilePath(something);
+    if (ProjectItem.isProejctItem(thing)) {
+      filePathList = getFilePath(thing);
     } else {
       const directoryUriList = this.treeDataProvider.filterType(uriList, vscode.FileType.File);
       filePathList = getFilePath(directoryUriList);
@@ -258,7 +258,6 @@ export class MultiProjectExplorer {
   }
 
   removeProject(treeItem: ProjectItem) {
-    // console.log(args);
     const filePathList = getFilePath(treeItem);
     const resultProjects = this.treeDataProvider.projects.filter(project => !filePathList.includes(project.path));
     this.treeDataProvider.updateProjects(resultProjects);
