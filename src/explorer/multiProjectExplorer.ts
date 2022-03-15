@@ -247,6 +247,7 @@ export class MultiProjectExplorer {
     if (ProjectItem.isProejctItem(thing)) {
       filePathList = getFilePath(thing);
     } else {
+      uriList = thing ? [thing] : uriList;
       const directoryUriList = this.treeDataProvider.filterType(uriList, vscode.FileType.File);
       filePathList = getFilePath(directoryUriList);
     }

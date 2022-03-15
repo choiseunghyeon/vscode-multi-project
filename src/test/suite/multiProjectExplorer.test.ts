@@ -31,7 +31,7 @@ suite("Multi Project Explorer", () => {
     mock.clearAllMocks();
   });
 
-  test("add multiple project from UI", async () => {
+  test("add multiple project from Explorer UI", async () => {
     // File 등록 안함 / 이미 존재하는 Project면 제외
     const initProjectData: IProject[] = [
       {
@@ -74,7 +74,25 @@ suite("Multi Project Explorer", () => {
     ]);
   });
 
-  test("add project child from UI", async () => {
+  test("add project from Explorer UI", async () => {
+    // 폴더 우클릭이 아닌 탐색기 바탕 우클릭
+    initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, emptyProjectData);
+    await sleep();
+    const uri = vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\JS_pattern_test`);
+
+    await vscode.commands.executeCommand("multiProjectExplorer.addProject", uri, []);
+
+    const data = getData(PROJECT_STORAGE_FULL_PATH);
+    expect(data).toHaveLength(1);
+    expect(data).toEqual([
+      {
+        path: `${TEST_FOLDER_LOCATION}\\JS_pattern_test`,
+        name: "JS_pattern_test",
+      },
+    ]);
+  });
+
+  test("add project child from Multi Project Explorer UI", async () => {
     initStorage(STORAGE_LOCATION, PROJECT_STORAGE_FULL_PATH, emptyProjectData);
     await sleep();
     const project: IProject = {

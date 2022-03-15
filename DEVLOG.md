@@ -14,6 +14,7 @@
 
 - workspace 추가
 - 영어문서 제작
+- bookmark 그룹화 및 정렬 기능
 
 ## Unit Test가 힘든 이유
 
