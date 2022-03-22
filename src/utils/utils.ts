@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { BookmarkItem } from "../explorer/bookmarkExplorer";
 import { ProjectItem } from "../explorer/multiProjectExplorer";
-import { IRegisterCommand } from "../type";
+import { IBookmark, IBookmarkFolder, IRegisterCommand } from "../type";
 
 type SourceType = vscode.Uri[] | ProjectItem | BookmarkItem;
 export function getFilePath(source: SourceType): string[] {
@@ -25,9 +25,11 @@ export function getFilePathFromProjectItem(projectItem: ProjectItem): string[] {
 }
 
 export function getFilePathFromBookmarkItem(bookmarkItem: BookmarkItem): string[] {
-  const bookmarkItemList = [bookmarkItem];
+  const bookmark = bookmarkItem.bookmark;
+  if (isBookmarkFolder(bookmark)) return [];
 
-  return bookmarkItemList.map(bookmarkItem => bookmarkItem.bookmark.path);
+  return [bookmark.path];
+  // return bookmarkPathList.map(bookmark => bookmark.path);
 }
 
 export function createCommand(name: string, callback: Function): IRegisterCommand {
@@ -40,4 +42,12 @@ export function createTreeItemCommand(command: string, title: string, args: any[
     title,
     arguments: args,
   };
+}
+
+export function isBookmark(bookmark: any): bookmark is IBookmark {
+  return bookmark.hasOwnProperty("path");
+}
+
+export function isBookmarkFolder(bookmark: any): bookmark is IBookmarkFolder {
+  return !bookmark.hasOwnProperty("path");
 }

@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { createCommand, createTreeItemCommand, getFilePath } from "../utils/utils";
+import { createCommand, createTreeItemCommand, getFilePath, isBookmark, isBookmarkFolder } from "../utils/utils";
 import { FileSystemProvider } from "../FileSystemProvider";
 import { BOOKMARK_STORAGE_FILE } from "../constants";
-import { IBookmark } from "../type";
+import { BookmarksType, ContextValueType, IBookmark, IBookmarkFolder } from "../type";
 import { ProjectItem } from "./multiProjectExplorer";
 import { BookmarkStorage } from "../storage/bookmarkStorage";
 import { BookmarkStoragePath } from "../storage/storage";
@@ -33,11 +33,11 @@ export class BookmarkProvider extends FileSystemProvider implements vscode.TreeD
     this.loadStorage();
   }
 
-  get bookmarks(): IBookmark[] {
+  get bookmarks(): BookmarksType {
     return this.storage.data;
   }
 
-  updateBookmarks(bookmarks: IBookmark[]) {
+  updateBookmarks(bookmarks: BookmarksType) {
     this.storage.update(bookmarks);
   }
 
@@ -46,14 +46,25 @@ export class BookmarkProvider extends FileSystemProvider implements vscode.TreeD
   }
 
   // tree data provider
-  async getChildren(): Promise<BookmarkItem[]> {
-    // 모든 bookmarkItem은 vscode.TreeItemCollapsibleState.None 이므로 element가 넘어오는 경우 없음
+  async getChildren(element?: BookmarkItem): Promise<BookmarkItem[]> {
+    if (element) {
+      const bookmarkFolder = this.bookmarks.find(bookmark => bookmark.name === element.bookmark.name);
+      if (!bookmarkFolder || isBookmark(bookmarkFolder)) return [];
+      return bookmarkFolder.children.map(bookmark => this.createBookmarkItem(bookmark));
+    }
     // 첫 로드
     if (this.bookmarks.length > 0) {
-      return this.bookmarks.map(bookmark => new BookmarkItem(bookmark, vscode.FileType.File));
+      return this.bookmarks.map(bookmark => this.createBookmarkItem(bookmark));
     }
 
     return [];
+  }
+
+  createBookmarkItem(bookmark: IBookmark | IBookmarkFolder): BookmarkItem {
+    if (isBookmark(bookmark)) {
+      return new BookmarkItem(bookmark, vscode.FileType.File);
+    }
+    return new BookmarkItem(bookmark, vscode.FileType.Directory);
   }
 
   getTreeItem(element: BookmarkItem): BookmarkItem {
@@ -63,14 +74,19 @@ export class BookmarkProvider extends FileSystemProvider implements vscode.TreeD
 
 export class BookmarkItem extends vscode.TreeItem {
   label: string;
-  constructor(public bookmark: IBookmark, public readonly type: vscode.FileType) {
-    super(bookmark.name, vscode.TreeItemCollapsibleState.None);
+  constructor(public bookmark: IBookmark | IBookmarkFolder, public readonly type: vscode.FileType) {
+    super(bookmark.name, isBookmark(bookmark) ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
 
     this.label = bookmark.name;
-    this.iconPath = new vscode.ThemeIcon("extensions-star-full");
 
-    this.command = createTreeItemCommand("multiProjectExplorer.openFile", "Open File", [vscode.Uri.file(bookmark.path)]);
-    this.contextValue = "file";
+    if (isBookmark(bookmark)) {
+      this.iconPath = new vscode.ThemeIcon("extensions-star-full");
+      this.command = createTreeItemCommand("multiProjectExplorer.openFile", "Open File", [vscode.Uri.file(bookmark.path)]);
+      this.contextValue = ContextValueType.File;
+    } else {
+      this.iconPath = new vscode.ThemeIcon("file-directory");
+      this.contextValue = ContextValueType.Folder;
+    }
   }
 
   static isBookmarkItem(thing: any): thing is BookmarkItem {
@@ -138,8 +154,35 @@ export class BookmarkExplorer {
   }
 
   removeBookmark(treeItem: BookmarkItem) {
-    const filePathlist = getFilePath(treeItem);
-    const resultBookmarks = this.treeDataProvider.bookmarks.filter(bookmark => !filePathlist.includes(bookmark.path));
-    this.treeDataProvider.updateBookmarks(resultBookmarks);
+    const name = treeItem.bookmark.name;
+    // const filePathlist = getFilePath(treeItem);
+
+    const bookmarks = this.treeDataProvider.bookmarks;
+    this.removeABC(bookmarks, name);
+    this.treeDataProvider.updateBookmarks(bookmarks);
+  }
+
+  removeABC(bookmarks: BookmarksType, name: string): boolean {
+    let targetIndex = -1;
+    for (let index = 0; index < bookmarks.length; index++) {
+      const bookmark = bookmarks[index];
+
+      if (bookmark.name === name) {
+        targetIndex = index;
+        break;
+      }
+
+      if (isBookmarkFolder(bookmark)) {
+        const result = this.removeABC(bookmark.children, name);
+        if (result) return true;
+      }
+    }
+
+    if (targetIndex > -1) {
+      bookmarks.splice(targetIndex, 1);
+      return true;
+    }
+
+    return false;
   }
 }

@@ -1,7 +1,8 @@
 import { Uri } from "vscode";
 import * as path from "path";
-import { IBookmark } from "../type";
+import { BookmarksType, IBookmark } from "../type";
 import { Storage } from "./storage";
+import { isBookmark } from "../utils/utils";
 
 export class BookmarkStorage extends Storage {
   constructor(location: string, fileName: string) {
@@ -12,9 +13,13 @@ export class BookmarkStorage extends Storage {
     return [];
   }
 
-  update(bookmarks: IBookmark[]) {
+  update(bookmarks: BookmarksType) {
     // path 통일
-    bookmarks.forEach(bookmark => (bookmark.path = Uri.file(bookmark.path).fsPath));
+    bookmarks.forEach(bookmark => {
+      if (isBookmark(bookmark)) {
+        bookmark.path = Uri.file(bookmark.path).fsPath;
+      }
+    });
 
     try {
       this.writeFileSync(bookmarks);

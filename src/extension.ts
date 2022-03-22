@@ -3,7 +3,6 @@
 import * as vscode from "vscode";
 import { BookmarkExplorer } from "./explorer/bookmarkExplorer";
 import { MultiProjectExplorer } from "./explorer/multiProjectExplorer";
-import { TaskExplorer } from "./explorer/taskExplorer";
 import { IRegisterCommand } from "./type";
 
 const addSubscriptions = (context: vscode.ExtensionContext, units: any): void => {
@@ -27,8 +26,7 @@ export let publicInstance: any;
 export function activate(context: vscode.ExtensionContext) {
   const multiProjectExplorer = new MultiProjectExplorer(context.globalStorageUri.fsPath);
   const bookmarkExplorer = new BookmarkExplorer(context.globalStorageUri.fsPath);
-  const taskExplorer = new TaskExplorer(context.globalStorageUri.fsPath);
-  publicInstance = [multiProjectExplorer, bookmarkExplorer, taskExplorer];
+  publicInstance = [multiProjectExplorer, bookmarkExplorer];
   addSubscriptions(context, publicInstance);
 }
 

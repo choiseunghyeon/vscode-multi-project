@@ -15,6 +15,7 @@
 - workspace 추가
 - 영어문서 제작
 - bookmark 그룹화 및 정렬 기능
+  - 진행중, bookmark folder 추가, 기존 bookmark folder로 이동 기능 추가
 
 ## Unit Test가 힘든 이유
 

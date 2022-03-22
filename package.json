@@ -219,6 +219,12 @@
           }
         }
       }
+    ],
+    "keybindings": [
+      {
+        "command": "multiProjectExplorer.openProject",
+        "key": "alt+q"
+      }
     ]
   },
   "scripts": {

@@ -18,7 +18,7 @@
 
      - you can add, remove, rename project through editing projects.json
 
-  7. Quick open each project
+  7. Quick open each project (key binding: alt + q)
 
      - search Multi Project: Open Project from command palette(ctrl + shift + p)
      - mouse over project then click door icon from Multi Project Explorer

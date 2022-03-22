@@ -4,14 +4,14 @@ import path = require("path");
 import * as vscode from "vscode";
 import { BOOKMARK_STORAGE_FILE } from "../../constants";
 import { ProjectItem } from "../../explorer/multiProjectExplorer";
-import { ContextValueType, IBookmark, IProject } from "../../type";
+import { BookmarksType, ContextValueType, IBookmark, IBookmarkFolder, IProject } from "../../type";
 import { getBookmarkProvider, getData, initStorage, restoreConfig, saveConfig, setConfig, sleep, STORAGE_LOCATION, TEST_FOLDER_LOCATION } from "../helper";
 import { BookmarkItem } from "../../explorer/bookmarkExplorer";
 import { mock, spyShowTextDocument } from "../__mock__";
 import { spyOn } from "jest-mock";
 
 const BOOKMARK_STORAGE_FULL_PATH = path.join(STORAGE_LOCATION, BOOKMARK_STORAGE_FILE);
-const initBookmarkData: IBookmark[] = [
+const initBookmarkData: BookmarksType = [
   {
     path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.test.tsx`,
     name: "App.test.tsx",
@@ -32,7 +32,7 @@ suite("Bookmark Explorer", () => {
   });
 
   test("add multiple bookmark from Explorer", async () => {
-    const initBookmarkData: IBookmark[] = [];
+    const initBookmarkData: BookmarksType = [];
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
     await sleep();
     const uriList = [
@@ -106,6 +106,87 @@ suite("Bookmark Explorer", () => {
     ]);
   });
 
+  test("remove bookmark folder from UI", async () => {
+    const initBookmarkData: BookmarksType = [
+      {
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.test.tsx`,
+        name: "App.test.tsx",
+      },
+      {
+        name: "AFolder",
+        children: [
+          {
+            path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+            name: "App.tsx",
+          },
+        ],
+      },
+    ];
+    initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
+    await sleep();
+    const bookmark: IBookmarkFolder = {
+      name: "AFolder",
+      children: [
+        {
+          path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+          name: "App.tsx",
+        },
+      ],
+    };
+    const bookmarkItem = new BookmarkItem(bookmark, vscode.FileType.Directory);
+
+    await vscode.commands.executeCommand("bookmarkExplorer.removeBookmark", bookmarkItem);
+
+    const data = getData(BOOKMARK_STORAGE_FULL_PATH);
+    expect(data).toHaveLength(1);
+    expect(data).toEqual([
+      {
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.test.tsx`,
+        name: "App.test.tsx",
+      },
+    ]);
+  });
+
+  test("remove bookmark file inside folder from UI", async () => {
+    const initBookmarkData: BookmarksType = [
+      {
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.test.tsx`,
+        name: "App.test.tsx",
+      },
+      {
+        name: "AFolder",
+        children: [
+          {
+            path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+            name: "App.tsx",
+          },
+        ],
+      },
+    ];
+    initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
+    await sleep();
+    const bookmark: IBookmark = {
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+      name: "App.tsx",
+    };
+    const bookmarkItem = new BookmarkItem(bookmark, vscode.FileType.File);
+
+    await vscode.commands.executeCommand("bookmarkExplorer.removeBookmark", bookmarkItem);
+
+    const data = getData(BOOKMARK_STORAGE_FULL_PATH);
+    expect(data).toHaveLength(2);
+    expect(data).toEqual([
+      {
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.test.tsx`,
+        name: "App.test.tsx",
+      },
+      {
+        name: "AFolder",
+        children: [],
+      },
+    ]);
+  });
+
   test("open file", async () => {
     const resource = vscode.Uri.file(`${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`);
 
@@ -125,7 +206,7 @@ suite("Bookmark Explorer", () => {
 });
 
 suite("Bookmark Provider", () => {
-  test("bookmark item with file", () => {
+  test("bookmark file item with file", () => {
     const bookmark = {
       path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\cypress.json`,
       name: "cypress.json",
@@ -141,15 +222,78 @@ suite("Bookmark Provider", () => {
     expect(bookmarkItem.command).toEqual({ command: "multiProjectExplorer.openFile", title: "Open File", arguments: [vscode.Uri.file(bookmark.path)] });
   });
 
+  test("bookmark folder with folder", () => {
+    const bookmark: IBookmarkFolder = {
+      name: "App.tsx",
+      children: [
+        {
+          path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+          name: "App.tsx",
+        },
+      ],
+    };
+
+    const bookmarkItem = new BookmarkItem(bookmark, vscode.FileType.Directory);
+
+    expect(bookmarkItem.label).toBe(bookmark.name);
+    expect(bookmarkItem.collapsibleState).toBe(vscode.TreeItemCollapsibleState.Collapsed);
+    expect(bookmarkItem.iconPath).toEqual(new vscode.ThemeIcon("file-directory"));
+    expect(bookmarkItem.contextValue).toBe(ContextValueType.Folder);
+    expect(bookmarkItem.type).toBe(vscode.FileType.Directory);
+    // expect(bookmarkItem.command).toEqual({ command: "multiProjectExplorer.openFile", title: "Open File", arguments: [vscode.Uri.file(bookmark.path)] });
+  });
+
   test("get children at first load", async () => {
+    const initBookmarkData: BookmarksType = [
+      {
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.test.tsx`,
+        name: "App.test.tsx",
+      },
+      {
+        name: "App.tsx",
+        children: [
+          {
+            path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+            name: "App.tsx",
+          },
+        ],
+      },
+    ];
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
     await sleep();
 
     const treeDataProvider = getBookmarkProvider();
-    const expectedBookmarkItems = initBookmarkData.map(bookmark => new BookmarkItem(bookmark, vscode.FileType.File));
+    const expectedBookmarkItems = [new BookmarkItem(initBookmarkData[0], vscode.FileType.File), new BookmarkItem(initBookmarkData[1], vscode.FileType.Directory)];
 
     const bookmarkItems = await treeDataProvider.getChildren();
 
+    expect(expectedBookmarkItems).toEqual(bookmarkItems);
+  });
+
+  test("get children from bookmark folder item", async () => {
+    const treeDataProvider = getBookmarkProvider();
+    const bookmark = {
+      name: "App.tsx",
+      children: [
+        {
+          path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+          name: "App.tsx",
+        },
+      ],
+    };
+    const bookmarkItem = new BookmarkItem(bookmark, vscode.FileType.Directory);
+
+    const bookmarkItems = await treeDataProvider.getChildren(bookmarkItem);
+
+    const expectedBookmarkItems = [
+      new BookmarkItem(
+        {
+          path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+          name: "App.tsx",
+        },
+        vscode.FileType.File
+      ),
+    ];
     expect(expectedBookmarkItems).toEqual(bookmarkItems);
   });
 
