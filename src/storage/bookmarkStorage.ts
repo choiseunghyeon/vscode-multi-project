@@ -1,6 +1,6 @@
 import { Uri } from "vscode";
 import * as path from "path";
-import { BookmarksType, IBookmark } from "../type";
+import { BookmarksType, IBookmark, IBookmarkFolder } from "../type";
 import { Storage } from "./storage";
 import { isBookmark } from "../utils/utils";
 
@@ -34,6 +34,12 @@ export class BookmarkStorage extends Storage {
     return {
       path: bookmarkPath,
       name: defaultName ?? "",
+    };
+  }
+  static createDefaultBookmarkFolder(name: string): IBookmarkFolder {
+    return {
+      name,
+      children: [],
     };
   }
 }

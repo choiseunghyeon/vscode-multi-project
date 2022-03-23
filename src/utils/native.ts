@@ -29,3 +29,7 @@ export async function showInputBox(defaultValue: string, placeHolder: string) {
   // vscode.window.showInformationMessage(`Got: ${result}`);
   return result;
 }
+
+export function showInformationMessage(message: string): void {
+  vscode.window.showInformationMessage(message);
+}

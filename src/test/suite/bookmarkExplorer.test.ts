@@ -7,7 +7,7 @@ import { ProjectItem } from "../../explorer/multiProjectExplorer";
 import { BookmarksType, ContextValueType, IBookmark, IBookmarkFolder, IProject } from "../../type";
 import { getBookmarkProvider, getData, initStorage, restoreConfig, saveConfig, setConfig, sleep, STORAGE_LOCATION, TEST_FOLDER_LOCATION } from "../helper";
 import { BookmarkItem } from "../../explorer/bookmarkExplorer";
-import { mock, spyShowTextDocument } from "../__mock__";
+import { mock, spyShowInformationMessage, spyShowInputBox, spyShowQuickPick, spyShowTextDocument } from "../__mock__";
 import { spyOn } from "jest-mock";
 
 const BOOKMARK_STORAGE_FULL_PATH = path.join(STORAGE_LOCATION, BOOKMARK_STORAGE_FILE);
@@ -31,6 +31,7 @@ suite("Bookmark Explorer", () => {
     mock.clearAllMocks();
   });
 
+  /* Add */
   test("add multiple bookmark from Explorer", async () => {
     const initBookmarkData: BookmarksType = [];
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
@@ -64,7 +65,7 @@ suite("Bookmark Explorer", () => {
   });
 
   test("add bookmark from Multi Project Explorer", async () => {
-    const initBookmarkData: IProject[] = [];
+    const initBookmarkData: BookmarksType = [];
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
     await sleep();
     const project: IProject = {
@@ -85,6 +86,60 @@ suite("Bookmark Explorer", () => {
     ]);
   });
 
+  test("add bookmark folder from Multi Project Explorer", async () => {
+    const initBookmarkData: BookmarksType = [];
+    initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
+    await sleep();
+    function stubbedShowInputBox(options?: vscode.InputBoxOptions, token?: vscode.CancellationToken): Thenable<string | undefined> {
+      return new Promise((resolve, reject) => {
+        resolve("AFolder");
+      });
+    }
+
+    spyShowInputBox.mockImplementationOnce(stubbedShowInputBox);
+    await vscode.commands.executeCommand("bookmarkExplorer.addBookmarkFolder", undefined);
+
+    const data = getData(BOOKMARK_STORAGE_FULL_PATH);
+    expect(data).toHaveLength(1);
+    expect(data).toEqual([
+      {
+        name: "AFolder",
+        children: [],
+      },
+    ]);
+  });
+
+  test("do not add bookmark folder if bookmark name already have taken", async () => {
+    const initBookmarkData: BookmarksType = [
+      {
+        name: "AFolder",
+        children: [],
+      },
+    ];
+    initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
+    await sleep();
+    function stubbedShowInputBox(options?: vscode.InputBoxOptions, token?: vscode.CancellationToken): Thenable<string | undefined> {
+      return new Promise((resolve, reject) => {
+        resolve("AFolder");
+      });
+    }
+
+    spyShowInputBox.mockImplementationOnce(stubbedShowInputBox);
+
+    await vscode.commands.executeCommand("bookmarkExplorer.addBookmarkFolder", undefined);
+
+    const data = getData(BOOKMARK_STORAGE_FULL_PATH);
+    expect(spyShowInformationMessage).toHaveBeenCalledWith("이미 사용중인 북마크 폴더 이름입니다.");
+    expect(data).toHaveLength(1);
+    expect(data).toEqual([
+      {
+        name: "AFolder",
+        children: [],
+      },
+    ]);
+  });
+
+  /* Remove */
   test("remove bookmark from UI", async () => {
     initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
     await sleep();
@@ -135,7 +190,7 @@ suite("Bookmark Explorer", () => {
     };
     const bookmarkItem = new BookmarkItem(bookmark, vscode.FileType.Directory);
 
-    await vscode.commands.executeCommand("bookmarkExplorer.removeBookmark", bookmarkItem);
+    await vscode.commands.executeCommand("bookmarkExplorer.removeBookmarkFolder", bookmarkItem);
 
     const data = getData(BOOKMARK_STORAGE_FULL_PATH);
     expect(data).toHaveLength(1);
@@ -183,6 +238,52 @@ suite("Bookmark Explorer", () => {
       {
         name: "AFolder",
         children: [],
+      },
+    ]);
+  });
+
+  test("move bookmark into bookmarkFolder", async () => {
+    const initBookmarkData: BookmarksType = [
+      {
+        path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+        name: "App.tsx",
+      },
+      {
+        name: "AFolder",
+        children: [],
+      },
+    ];
+    initStorage(STORAGE_LOCATION, BOOKMARK_STORAGE_FULL_PATH, initBookmarkData);
+    await sleep();
+    const bookmark: IBookmark = {
+      path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+      name: "App.tsx",
+    };
+    const bookmarkItem = new BookmarkItem(bookmark, vscode.FileType.File);
+
+    const quickPickItem = {
+      label: "AFolder",
+    };
+
+    spyShowQuickPick.mockImplementationOnce(
+      () =>
+        new Promise((resolve, reject) => {
+          resolve(quickPickItem);
+        })
+    );
+    await vscode.commands.executeCommand("bookmarkExplorer.moveBookmark", bookmarkItem);
+
+    const data = getData(BOOKMARK_STORAGE_FULL_PATH);
+    expect(data).toHaveLength(1);
+    expect(data).toEqual([
+      {
+        name: "AFolder",
+        children: [
+          {
+            path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
+            name: "App.tsx",
+          },
+        ],
       },
     ]);
   });
@@ -250,7 +351,7 @@ suite("Bookmark Provider", () => {
         name: "App.test.tsx",
       },
       {
-        name: "App.tsx",
+        name: "AFolder",
         children: [
           {
             path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,
@@ -273,7 +374,7 @@ suite("Bookmark Provider", () => {
   test("get children from bookmark folder item", async () => {
     const treeDataProvider = getBookmarkProvider();
     const bookmark = {
-      name: "App.tsx",
+      name: "AFolder",
       children: [
         {
           path: `${TEST_FOLDER_LOCATION}\\cypress-testbed\\App.tsx`,

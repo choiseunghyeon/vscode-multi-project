@@ -12,7 +12,7 @@ export interface IBookmark {
 
 export interface IBookmarkFolder {
   name: string;
-  children: IBookmark[];
+  children: BookmarksType;
 }
 
 export interface IRegisterCommand {
@@ -24,6 +24,6 @@ export const enum ContextValueType {
   Project = "project",
   ProjectChild = "projectChild",
   File = "file",
-  Folder = "Folder",
+  Folder = "folder",
   Default = "default",
 }

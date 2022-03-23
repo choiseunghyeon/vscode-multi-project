@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/choiseunghyeon/vscode-multi-project"
   },
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.62.0"
   },
@@ -117,8 +117,23 @@
         "icon": "$(debug-restart)"
       },
       {
+        "command": "bookmarkExplorer.addBookmarkFolder",
+        "title": "Add Bookmark Folder",
+        "icon": "$(new-folder)"
+      },
+      {
         "command": "bookmarkExplorer.removeBookmark",
         "title": "Remove Bookmark",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "bookmarkExplorer.removeBookmarkFolder",
+        "title": "Remove Bookmark Folder",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "bookmarkExplorer.moveBookmark",
+        "title": "Move Bookmark",
         "icon": "$(debug-restart)"
       }
     ],
@@ -153,6 +168,11 @@
           "command": "bookmarkExplorer.editBookmark",
           "when": "view == bookmarkExplorer",
           "group": "navigation"
+        },
+        {
+          "command": "bookmarkExplorer.addBookmarkFolder",
+          "when": "view == bookmarkExplorer",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -183,7 +203,15 @@
         },
         {
           "command": "bookmarkExplorer.removeBookmark",
-          "when": "view == bookmarkExplorer"
+          "when": "view == bookmarkExplorer && viewItem == file"
+        },
+        {
+          "command": "bookmarkExplorer.removeBookmarkFolder",
+          "when": "view == bookmarkExplorer && viewItem == folder"
+        },
+        {
+          "command": "bookmarkExplorer.moveBookmark",
+          "when": "view == bookmarkExplorer && viewItem == file"
         }
       ]
     },

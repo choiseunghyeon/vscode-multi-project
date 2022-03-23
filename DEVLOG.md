@@ -15,7 +15,7 @@
 - workspace 추가
 - 영어문서 제작
 - bookmark 그룹화 및 정렬 기능
-  - 진행중, bookmark folder 추가, 기존 bookmark folder로 이동 기능 추가
+  - bookmark 기능 고도화 (N 중첩 가능 하도록), bookmark folder로 이동하는 방법 알아보기(drag & drop 등), 테스트 코드 정리
 
 ## Unit Test가 힘든 이유
 

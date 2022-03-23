@@ -29,7 +29,8 @@
      - add a bookmark or multi bookmark from Explorer(ctrl + shift + E)
      - add a bookmark from Multi Project Explorer
   2. Rename Bookmark name
-  3. Sync Bookmark with json file
+  3. Organize Bookmark by Bookmark Folder
+  4. Sync Bookmark with json file
      - you can add, remove, rename bookmark through editing bookmarks.json
 
 ## How To Use
@@ -48,5 +49,5 @@
 
 - Open Project
   - ![fromConfiguration](./asset/image/openProject1.png)
-  - **_command palette(ctrl + shift + p)_**
+  - **_command palette(ctrl + shift + p or alt + q)_**
   - ![fromConfiguration](./asset/image/openProject2.png)

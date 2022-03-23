@@ -7,7 +7,7 @@ import { BookmarksType, ContextValueType, IBookmark, IBookmarkFolder } from "../
 import { ProjectItem } from "./multiProjectExplorer";
 import { BookmarkStorage } from "../storage/bookmarkStorage";
 import { BookmarkStoragePath } from "../storage/storage";
-import { openResource } from "../utils/native";
+import { openResource, showInformationMessage, showInputBox } from "../utils/native";
 
 export class BookmarkProvider extends FileSystemProvider implements vscode.TreeDataProvider<BookmarkItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<BookmarkItem | undefined | void> = new vscode.EventEmitter<BookmarkItem | undefined | void>();
@@ -127,7 +127,10 @@ export class BookmarkExplorer {
       createCommand("bookmarkExplorer.openFile", this.openFile),
       createCommand("bookmarkExplorer.editBookmark", this.openBookmarkFile),
       createCommand("bookmarkExplorer.addBookmark", this.addBookmark),
+      createCommand("bookmarkExplorer.addBookmarkFolder", this.addBookmarkFolder),
       createCommand("bookmarkExplorer.removeBookmark", this.removeBookmark),
+      createCommand("bookmarkExplorer.removeBookmarkFolder", this.removeBookmarkFolder),
+      createCommand("bookmarkExplorer.moveBookmark", this.moveBookmark),
       createCommand("bookmarkExplorer.refreshBookmarkExplorerEntry", this.refresh),
     ];
   }
@@ -153,27 +156,57 @@ export class BookmarkExplorer {
     this.treeDataProvider.updateBookmarks(resultBookmarks);
   }
 
-  removeBookmark(treeItem: BookmarkItem) {
-    const name = treeItem.bookmark.name;
-    // const filePathlist = getFilePath(treeItem);
+  async addBookmarkFolder() {
+    const bookmarkFolderName = await showInputBox("", "북마크 폴더 이름을 입력해주세요");
+    if (bookmarkFolderName === undefined) return;
 
     const bookmarks = this.treeDataProvider.bookmarks;
-    this.removeABC(bookmarks, name);
+    const duplicatedBookmarkFolder = this.getBookmarkFolder(bookmarks, bookmarkFolderName);
+    if (duplicatedBookmarkFolder) {
+      showInformationMessage("이미 사용중인 북마크 폴더 이름입니다.");
+      return;
+    }
+
+    const bookmark = BookmarkStorage.createDefaultBookmarkFolder(bookmarkFolderName);
+    const resultBookmarks = this.treeDataProvider.bookmarks.concat(bookmark);
+    this.treeDataProvider.updateBookmarks(resultBookmarks);
+  }
+
+  removeBookmark(treeItem: BookmarkItem) {
+    if (!isBookmark(treeItem.bookmark)) return;
+
+    const name = treeItem.bookmark.path;
+
+    const bookmarks = this.treeDataProvider.bookmarks;
+    this.deleteBookmark(bookmarks, name, "file");
     this.treeDataProvider.updateBookmarks(bookmarks);
   }
 
-  removeABC(bookmarks: BookmarksType, name: string): boolean {
+  removeBookmarkFolder(treeItem: BookmarkItem) {
+    if (!isBookmarkFolder(treeItem.bookmark)) return;
+
+    const name = treeItem.bookmark.name;
+
+    const bookmarks = this.treeDataProvider.bookmarks;
+    this.deleteBookmark(bookmarks, name, "folder");
+    this.treeDataProvider.updateBookmarks(bookmarks);
+  }
+
+  deleteBookmark(bookmarks: BookmarksType, pathOrName: string, bookmarkType: "file" | "folder"): boolean {
     let targetIndex = -1;
     for (let index = 0; index < bookmarks.length; index++) {
       const bookmark = bookmarks[index];
 
-      if (bookmark.name === name) {
+      if (bookmarkType === "file" && isBookmark(bookmark) && bookmark.path === pathOrName) {
+        targetIndex = index;
+        break;
+      } else if (bookmarkType === "folder" && isBookmarkFolder(bookmark) && bookmark.name === pathOrName) {
         targetIndex = index;
         break;
       }
 
       if (isBookmarkFolder(bookmark)) {
-        const result = this.removeABC(bookmark.children, name);
+        const result = this.deleteBookmark(bookmark.children, pathOrName, bookmarkType);
         if (result) return true;
       }
     }
@@ -184,5 +217,44 @@ export class BookmarkExplorer {
     }
 
     return false;
+  }
+
+  async moveBookmark(treeItem: BookmarkItem, uriList: vscode.Uri[]) {
+    const selectedQuickPickItem = await this.selectProject();
+
+    if (!selectedQuickPickItem) {
+      return;
+    }
+
+    const folderName = selectedQuickPickItem.label;
+    const targetBookmark = treeItem.bookmark;
+
+    const bookmarks = this.treeDataProvider.bookmarks;
+    if (isBookmark(targetBookmark)) {
+      this.deleteBookmark(bookmarks, targetBookmark.path, "file");
+    }
+
+    const bookmarkFolder = this.getBookmarkFolder(bookmarks, folderName);
+    if (!bookmarkFolder) return;
+    bookmarkFolder.children.push(targetBookmark);
+    this.treeDataProvider.updateBookmarks(bookmarks);
+  }
+
+  private getBookmarkFolder(bookmarks: BookmarksType, name: string): IBookmarkFolder | undefined {
+    const result = bookmarks.filter(bookmark => isBookmarkFolder(bookmark)).find(bookmarkFolder => bookmarkFolder.name === name);
+    if (!result) return;
+
+    return result as IBookmarkFolder;
+  }
+  private async selectProject() {
+    const bookmarkItems = await this.treeDataProvider.getChildren();
+    const items: vscode.QuickPickItem[] = bookmarkItems
+      .filter(bookmarkItem => isBookmarkFolder(bookmarkItem.bookmark))
+      .map(bookmarkFolderItem => ({
+        label: bookmarkFolderItem.label,
+      }));
+
+    const selectedQuickPickItem = await vscode.window.showQuickPick(items);
+    return selectedQuickPickItem;
   }
 }

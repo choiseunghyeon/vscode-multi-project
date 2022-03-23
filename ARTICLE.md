@@ -69,5 +69,6 @@ Jest를 활용해서 Unit Test를 진행하려 했지만 Intergration Test로 �
      - add a bookmark or multi bookmark from Explorer(ctrl + shift + E)
      - add a bookmark from Multi Project Explorer
   2. Rename Bookmark name
-  3. Sync Bookmark with json file
+  3. Organize Bookmark by Bookmark Folder
+  4. Sync Bookmark with json file
      - you can add, remove, rename bookmark through editing bookmarks.json
